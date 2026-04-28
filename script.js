@@ -40,10 +40,12 @@ window.addEventListener('DOMContentLoaded', function () {
 
     var folderContents = {
         websites: [
-            { label: "Joanna Istanbul", icon: "", url: "https://joannaistanbul.com" },
+            { label: "[untold]", icon: "https://ali001.com/functions/assets/apple-touch-icon.png", url: "https://ali001.com/functions" },
+            { label: "Gossip", icon: "", url: "https://ali001.com/links" },
             { label: "Persistence of Color", icon: "", url: "https://ali001.com/persistence-of-color" },
             { label: "Cult of the Ugly", icon: "", url: "https://user012100.github.io/spread" },
-            { label: "Gossip", icon: "", url: "https://user012100.github.io/links" },
+            { label: "Thoughts on Interaction of Color", icon: "", url: "https://user012100.github.io/manuscript" },
+            { label: "Joanna Istanbul", icon: "", url: "https://joannaistanbul.com" },
             { label: "Nick Lambrou", icon: "images/icons/nl.png", url: "https://nlambrou.com" },
         ],
         artwork: [

@@ -6,6 +6,7 @@ body {
     height: 100vh;
     overflow: hidden;
     position: relative;
+    font-size: 1.2rem;
 }
 .description {
     z-index: -9999999;
@@ -73,7 +74,7 @@ body {
     pointer-events: none;
 }
 .icon-label {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     text-align: center;
     color: #ffd4fa;
     text-shadow: 1px 1px 0 #0f0119, 0 0 2px #ff8dff6e;
