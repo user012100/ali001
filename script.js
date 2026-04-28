@@ -40,8 +40,8 @@ window.addEventListener('DOMContentLoaded', function () {
 
     var folderContents = {
         websites: [
-            { label: "[untold]", icon: "https://ali001.com/functions/assets/apple-touch-icon.png", url: "https://ali001.com/functions" },
-            { label: "Gossip", icon: "", url: "https://ali001.com/links" },
+            { label: "[untold]", icon: "https://ali001.com/functions/assets/apple-touch-icon.png", url: "https://user012100.github.io/functions" },
+            { label: "Gossip", icon: "", url: "https://user012100.github.io/links" },
             { label: "Persistence of Color", icon: "", url: "https://ali001.com/persistence-of-color" },
             { label: "Cult of the Ugly", icon: "", url: "https://user012100.github.io/spread" },
             { label: "Thoughts on Interaction of Color", icon: "", url: "https://user012100.github.io/manuscript" },
