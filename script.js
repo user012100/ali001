@@ -39,7 +39,7 @@ window.addEventListener('DOMContentLoaded', function () {
     ];
 
     var folderContents = {
-        websites: [
+        web: [
             { label: "[untold]", icon: "https://ali001.com/functions/assets/apple-touch-icon.png", url: "https://user012100.github.io/functions" },
             { label: "Gossip", icon: "", url: "https://user012100.github.io/links" },
             { label: "Persistence of Color", icon: "", url: "https://ali001.com/persistence-of-color" },
@@ -48,7 +48,7 @@ window.addEventListener('DOMContentLoaded', function () {
             { label: "Joanna Istanbul", icon: "", url: "https://joannaistanbul.com" },
             { label: "Nick Lambrou", icon: "images/icons/nl.png", url: "https://nlambrou.com" },
         ],
-        artwork: [
+        design: [
             { label: "dinoboy-no-angel.jpg", icon: "images/artwork/dinoboy-no-angel.jpg", type: "image", url: "images/artwork/dinoboy-no-angel.jpg" },
             { label: "computerwife-canvas.mp4", icon: "images/artwork/computerwife-canvas.png", type: "video", url: "images/artwork/computerwife-canvas.mp4" }
         ],
