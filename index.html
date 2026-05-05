@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ali salifov</title>
     <meta name="description" content="my name is ali salifov, and im a multimedia artist based in new york. i like music, digital art, movies, books, zines. feel free to look around and explore my projects!">
 
@@ -20,9 +21,7 @@
 
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
-    <script src="https://w.soundcloud.com/player/api.js"></script>
-    
+
     <link rel="apple-touch-icon" sizes="57x57" href="images/icons/favicon/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="images/icons/favicon/apple-icon-60x60.png">
     <link rel="apple-touch-icon" sizes="72x72" href="images/icons/favicon/apple-icon-72x72.png">
@@ -32,7 +31,7 @@
     <link rel="apple-touch-icon" sizes="144x144" href="images/icons/favicon/apple-icon-144x144.png">
     <link rel="apple-touch-icon" sizes="152x152" href="images/icons/favicon/apple-icon-152x152.png">
     <link rel="apple-touch-icon" sizes="180x180" href="images/icons/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192"  href="images/icons/favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icons/favicon/android-icon-192x192.png">
     <link rel="icon" type="image/png" sizes="32x32" href="images/icons/favicon/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="images/icons/favicon/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="images/icons/favicon/favicon-16x16.png">
@@ -42,41 +41,116 @@
     <meta name="theme-color" content="#ffffff">
 </head>
 <body>
-    <div class="scanlines"></div>
-    <div id="description">my name is ali salifov, and im a multimedia artist based in new york. i like music, digital art, movies, books, zines. feel free to look around and explore my projects!</div>
-    <div class="desktop" id="desktop">
-        <div class="icon" data-app="websites"><img src="images/icons/folder.png" class="icon-img"><div class="icon-label">websites</div></div>
-        <div class="icon" data-app="artwork"><img src="images/icons/folder.png" class="icon-img"><div class="icon-label">artwork</div></div>
-        <div class="icon" data-app="music player"><img src="images/icons/music-player.png" class="icon-img"><div class="icon-label">music player</div></div>
-        <div class="icon" data-app="video player"><img src="images/icons/video-player.png" class="icon-img"><div class="icon-label">video player</div></div>
-        <div class="icon" data-app="terminal"><img src="images/icons/terminal.png" class="icon-img"><div class="icon-label">terminal</div></div>
-        <div class="icon" data-app="about.txt"><img src="images/icons/about.png" class="icon-img"><div class="icon-label">about.txt</div></div>
-    </div>
-    <div id="startMenu" class="start-menu">
-        <div class="start-menu-list">
-            <div class="start-menu-folder" data-app="websites"><img src="images/icons/folder.png" class="start-folder-icon"> websites</div>
-            <div class="start-menu-folder" data-app="artwork"><img src="images/icons/folder.png" class="start-folder-icon"> artwork</div>
-            <div class="start-menu-divider"></div>
-            <div class="start-menu-folder" data-app="music player"><img src="images/icons/music-player.png" class="start-folder-icon"> music player</div>
-            <div class="start-menu-folder" data-app="video player"><img src="images/icons/video-player.png" class="start-folder-icon"> video player</div>
-            <div class="start-menu-folder" data-app="terminal"><img src="images/icons/terminal.png" class="start-folder-icon"> terminal</div>
-            <div class="start-menu-divider"></div>
-            <div class="start-menu-restart" id="restartBtnMenu">
-                <span class="start-folder-icon restart-icon">↻</span>
-                <span class="restart-text">restart</span>
+    <div id="fade-overlay" aria-hidden="true"></div>
+
+    <header>
+        <div class="header-top">
+            <h1>ali salifov</h1>
+        </div>
+        <p class="tagline">multimedia artist based in new york. i like music, digital art, movies, books, zines.</p>
+        <time id="datetime" aria-live="polite"></time>
+    </header>
+
+    <main>
+        <section id="web" aria-label="web projects">
+            <h2>web</h2>
+            <ul class="icon-grid">
+                <li>
+                    <a href="https://joannaistanbul.com" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/joanna.png" alt="" class="icon-img">
+                        <span class="icon-label">Joanna</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://nlambrou.com" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/nl.png" alt="" class="icon-img">
+                        <span class="icon-label">Nick Lambrou</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://user012100.github.io/functions/" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/untold.png" alt="" class="icon-img">
+                        <span class="icon-label">[untold]</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://user012100.github.io/links/" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/gossip.png" alt="" class="icon-img">
+                        <span class="icon-label">Gossip</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="persistence-of-color/" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/persistence.png" alt="" class="icon-img">
+                        <span class="icon-label">Persistence of Color</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://user012100.github.io/spread/" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/cult.png" alt="" class="icon-img">
+                        <span class="icon-label">Cult of the Ugly</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://user012100.github.io/manuscript/" target="_blank" rel="noopener noreferrer" class="icon">
+                        <img src="images/icons/thoughts.png" alt="" class="icon-img">
+                        <span class="icon-label">Thoughts on Interaction of Color</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section id="artwork" aria-label="artwork">
+            <h2>artwork</h2>
+            <ul class="icon-grid">
+                <li>
+                    <button class="icon" data-lightbox-type="image" data-lightbox-src="images/artwork/dinoboy-no-angel.jpg" data-lightbox-label="dinoboy-no-angel.jpg">
+                        <img src="images/artwork/dinoboy-no-angel.jpg" alt="dinoboy-no-angel" class="icon-img">
+                        <span class="icon-label">dinoboy-no-angel.jpg</span>
+                    </button>
+                </li>
+                <li>
+                    <button class="icon" data-lightbox-type="video" data-lightbox-src="images/artwork/computerwife-canvas.mp4" data-lightbox-label="computerwife-canvas.mp4">
+                        <img src="images/artwork/computerwife-canvas.png" alt="computerwife-canvas" class="icon-img">
+                        <span class="icon-label">computerwife-canvas.mp4</span>
+                    </button>
+                </li>
+            </ul>
+        </section>
+
+        <section id="music" aria-label="music player">
+            <h2>music i like</h2>
+            <div class="embed-container">
+                <iframe
+                    title="SoundCloud music player"
+                    width="100%"
+                    height="300"
+                    allow="autoplay"
+                    src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/2024019159&color=%23ff5500&auto_play=false&hide_related=true&show_comments=true&show_user=true&show_reposts=false&show_teaser=false&visual=true"
+                    frameborder="0">
+                </iframe>
             </div>
-        </div>
+        </section>
+
+        <section id="video" aria-label="video player">
+            <h2>random videos</h2>
+            <div class="embed-container video-embed">
+                <iframe
+                    title="YouTube video player"
+                    src="https://www.youtube.com/embed/videoseries?si=hD47nG1nlfz5Phfx&list=PLvoACP_yh07Uw7ElH7BECcKqQ4c49FKBm"
+                    allow="autoplay; encrypted-media"
+                    allowfullscreen
+                    frameborder="0">
+                </iframe>
+            </div>
+        </section>
+    </main>
+
+    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Media viewer" hidden>
+        <button id="lightbox-close" aria-label="Close">&times;</button>
+        <div id="lightbox-content"></div>
     </div>
-    <div class="taskbar">
-        <div class="taskbar-left">
-            <button class="taskbar-button" id="homeButton">@</button>
-            <div class="open-windows" id="openWindows"></div>
-        </div>
-        <div class="taskbar-right">
-            <div class="datetime" id="datetime"></div>
-        </div>
-    </div>
-    <div id="fade-overlay"></div>
+
     <script src="script.js"></script>
 </body>
 </html>
