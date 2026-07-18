@@ -1,159 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ali salifov</title>
-    <meta name="description" content="my name is ali salifov, and im a multimedia artist based in new york. i like music, digital art, movies, books, zines. feel free to look around and explore my projects!">
-
-    <meta property="og:url" content="https://ali001.com">
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="ali salifov">
-    <meta property="og:description" content="my name is ali salifov, and im a multimedia artist based in new york. i like music, digital art, movies, books, zines. feel free to look around and explore my projects!">
-    <meta property="og:image" content="https://opengraph.b-cdn.net/production/images/2542eebb-a37b-4931-ac31-60fb08ef4ec2.png?token=zwzmHj3CPxUv2aJiPHWUpNoQrzD5u88gcmunWzjbuXE&height=630&width=1200&expires=33291640511">
-
-    <meta name="twitter:card" content="summary_large_image">
-    <meta property="twitter:domain" content="ali001.com">
-    <meta property="twitter:url" content="https://ali001.com">
-    <meta name="twitter:title" content="ali salifov">
-    <meta name="twitter:description" content="my name is ali salifov, and im a multimedia artist based in new york. i like music, digital art, movies, books, zines. feel free to look around and explore my projects!">
-    <meta name="twitter:image" content="https://opengraph.b-cdn.net/production/images/2542eebb-a37b-4931-ac31-60fb08ef4ec2.png?token=zwzmHj3CPxUv2aJiPHWUpNoQrzD5u88gcmunWzjbuXE&height=630&width=1200&expires=33291640511">
-
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
-
-    <link rel="apple-touch-icon" sizes="57x57" href="images/icons/favicon/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="images/icons/favicon/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="images/icons/favicon/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="images/icons/favicon/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="images/icons/favicon/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="images/icons/favicon/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="images/icons/favicon/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="images/icons/favicon/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="images/icons/favicon/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="images/icons/favicon/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="images/icons/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="images/icons/favicon/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="images/icons/favicon/favicon-16x16.png">
-    <link rel="manifest" href="images/icons/favicon/manifest.json">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="images/icons/favicon/ms-icon-144x144.png">
-    <meta name="theme-color" content="#ffffff">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Ali Salifov</title>
+  <meta name="description" content="Ali Salifov is a multimedia artist based in New York. Portfolio of projects including XD Magazine, Joanna, [untold], Gossip, Persistence of Memory, Cult of the Ugly, and Nick Lambrou.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
 <body>
-    <div id="fade-overlay" aria-hidden="true"></div>
-
-    <header>
-        <div class="header-top">
-            <h1>ali salifov</h1>
-        </div>
-        <p class="tagline">multimedia artist based in new york. i like music, digital art, movies, books, zines.</p>
-        <p class="contact-links">
-            <a href="mailto:work@ali001.com">work@ali001.com</a> &mdash; <a href="https://instagram.com/ali00100001" target="_blank" rel="noopener noreferrer">instagram.com/ali00100001</a>
-        </p>
-        <time id="datetime" aria-live="polite"></time>
-    </header>
-
-    <main>
-        <section id="web" aria-label="web projects">
-            <h2>web</h2>
-            <ul class="icon-grid">
-                <li>
-                    <a href="https://joannaistanbul.com" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/joanna.png" alt="" class="icon-img">
-                        <span class="icon-label">Joanna</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://nlambrou.com" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/nl.png" alt="" class="icon-img">
-                        <span class="icon-label">Nick Lambrou</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://user012100.github.io/functions/" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/untold.png" alt="" class="icon-img">
-                        <span class="icon-label">[untold]</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://user012100.github.io/links/" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/gossip.png" alt="" class="icon-img">
-                        <span class="icon-label">Gossip</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="persistence-of-color/" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/persistence.png" alt="" class="icon-img">
-                        <span class="icon-label">Persistence of Color</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://user012100.github.io/spread/" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/cult.png" alt="" class="icon-img">
-                        <span class="icon-label">Cult of the Ugly</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="https://user012100.github.io/manuscript/" target="_blank" rel="noopener noreferrer" class="icon">
-                        <img src="images/icons/thoughts.png" alt="" class="icon-img">
-                        <span class="icon-label">Thoughts on Interaction of Color</span>
-                    </a>
-                </li>
-            </ul>
-        </section>
-
-        <section id="artwork" aria-label="artwork">
-            <h2>artwork</h2>
-            <ul class="icon-grid">
-                <li>
-                    <button class="icon" data-lightbox-type="image" data-lightbox-src="images/artwork/dinoboy-no-angel.jpg" data-lightbox-label="dinoboy-no-angel.jpg">
-                        <img src="images/artwork/dinoboy-no-angel.jpg" alt="dinoboy-no-angel" class="icon-img">
-                        <span class="icon-label">dinoboy-no-angel.jpg</span>
-                    </button>
-                </li>
-                <li>
-                    <button class="icon" data-lightbox-type="video" data-lightbox-src="images/artwork/computerwife-canvas.mp4" data-lightbox-label="computerwife-canvas.mp4">
-                        <img src="images/artwork/computerwife-canvas.png" alt="computerwife-canvas" class="icon-img">
-                        <span class="icon-label">computerwife-canvas.mp4</span>
-                    </button>
-                </li>
-            </ul>
-        </section>
-
-        <section id="music" aria-label="music player">
-            <h2>music i like</h2>
-            <div class="embed-container">
-                <iframe
-                    title="SoundCloud music player"
-                    width="100%"
-                    height="300"
-                    allow="autoplay"
-                    src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/2024019159&color=%23ff5500&auto_play=false&hide_related=true&show_comments=true&show_user=true&show_reposts=false&show_teaser=false&visual=true"
-                    frameborder="0">
-                </iframe>
-            </div>
-        </section>
-
-        <section id="video" aria-label="video player">
-            <h2>random videos</h2>
-            <div class="embed-container video-embed">
-                <iframe
-                    title="YouTube video player"
-                    src="https://www.youtube.com/embed/videoseries?si=hD47nG1nlfz5Phfx&list=PLvoACP_yh07Uw7ElH7BECcKqQ4c49FKBm"
-                    allow="autoplay; encrypted-media"
-                    allowfullscreen
-                    frameborder="0">
-                </iframe>
-            </div>
-        </section>
-    </main>
-
-    <div id="lightbox" role="dialog" aria-modal="true" aria-label="Media viewer" hidden>
-        <button id="lightbox-close" aria-label="Close">&times;</button>
-        <div id="lightbox-content"></div>
+  <div id="load-overlay"><div id="load-dot"></div></div>
+  <template id="canvas-fallback-content">
+    <h1>Ali Salifov</h1>
+    <p>Ali Salifov is a multimedia artist based in New York.</p>
+    <nav aria-label="Contact">
+      <ul id="contact-list">
+        <li><a href="mailto:work@ali001.com">Email</a></li>
+        <li><a href="https://instagram.com/ali00100001/" rel="noopener">Instagram</a></li>
+      </ul>
+    </nav>
+    <nav aria-label="Projects">
+      <ul id="project-list">
+        <li><a href="https://xdmag.com" rel="noopener">XD Magazine</a></li>
+        <li><a href="https://joannaistanbul.com" rel="noopener">Joanna</a></li>
+        <li><a href="https://user012100.github.io/functions" rel="noopener">[untold]</a></li>
+        <li><a href="https://user012100.github.io/links" rel="noopener">Gossip</a></li>
+        <li><a href="https://user012100.github.io/binding" rel="noopener">Persistence of Memory</a></li>
+        <li><a href="https://user012100.github.io/spread" rel="noopener">Cult of the Ugly</a></li>
+        <li><a href="https://nlambrou.com" rel="noopener">Nick Lambrou</a></li>
+      </ul>
+    </nav>
+  </template>
+  <a id="orb-link" href="#" rel="noopener"></a>
+  <a id="label" href="#" rel="noopener"></a>
+  <div id="bio-overlay" aria-hidden="true">
+    <div class="bio-overlay-content">
+      <p>Ali Salifov is a multimedia artist based in New York.</p>
+      <div class="bio-overlay-links">
+        <p><a href="mailto:work@ali001.com">Email</a></p>
+        <p><a href="https://instagram.com/ali00100001/" rel="noopener">Instagram</a></p>
+      </div>
     </div>
-
-    <script src="script.js"></script>
+  </div>
+  <script src="script.js"></script>
 </body>
 </html>
