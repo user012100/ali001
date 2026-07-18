@@ -76,7 +76,7 @@ canvas {
   text-shadow: 0 0.0625em 0.25em rgba(0, 0, 0, 0.95), 0 0 0.1875em rgba(0, 0, 0, 0.85);
   white-space: nowrap;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity 0.25s ease;
   z-index: 10;
 }
 

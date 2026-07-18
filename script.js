@@ -24,7 +24,7 @@ let blackHole = { screenX: 0, screenY: 0, screenRadius: 0, screenVisible: false 
 let labelContentIndex = -1;
 let labelPhase = 'idle';
 let labelFadeOutUntil = 0;
-const LABEL_FADE_MS = 120;
+const LABEL_FADE_MS = 250;
 const LABEL_EDGE_PADDING = 16;
 
 const ORBIT_MAJOR_RADIUS = 380;
@@ -132,11 +132,17 @@ uniform sampler2D uEnvMap;
 uniform vec3 uEyePosition;
 uniform vec3 uTintColor;
 uniform float uTintAmount;
+uniform float uKeyLightAmount;
 
 varying vec3 vWorldPos;
 varying vec3 vWorldNormal;
 
 #define PI 3.14159265359
+
+// Fixed warm "sun" key light used purely for a soft specular highlight/rim
+// on the mirror orbs (the env map reflection alone can look flat without it).
+const vec3 LIGHT_DIR = vec3(0.4, 0.55, 0.45); // points from surface toward the light
+const vec3 LIGHT_COLOR = vec3(1.0, 0.93, 0.8);
 
 void main() {
   vec3 normal = normalize(vWorldNormal);
@@ -149,7 +155,14 @@ void main() {
   vec3 tintedEnv = mix(envColor, envColor * uTintColor, uTintAmount);
 
   float fresnel = pow(1.0 - max(dot(normal, -incident), 0.0), 3.0);
-  vec3 color = tintedEnv + fresnel * 0.65;
+
+  vec3 lightDir = normalize(LIGHT_DIR);
+  vec3 viewDir = -incident;
+  vec3 halfVec = normalize(lightDir + viewDir);
+  float specular = pow(max(dot(normal, halfVec), 0.0), 50.0);
+  float diffuseWrap = max(dot(normal, lightDir), 0.0) * 0.06;
+
+  vec3 color = tintedEnv + fresnel * 0.65 + LIGHT_COLOR * (specular * 0.8 + diffuseWrap) * uKeyLightAmount;
 
   gl_FragColor = vec4(color, 1.0);
 }
@@ -398,13 +411,14 @@ function computeCameraDistance() {
   return constrain(dist, 500, 4000);
 }
 
-function drawReflectiveOrb(size, posX, posY, posZ, eye, tintColor, tintAmount) {
+function drawReflectiveOrb(size, posX, posY, posZ, eye, tintColor, tintAmount, keyLightAmount) {
   shader(orbReflectShader);
   orbReflectShader.setUniform('uEnvMap', citrusImg);
   orbReflectShader.setUniform('uEyePosition', [eye.x, eye.y, eye.z]);
   orbReflectShader.setUniform('uOrbTranslation', [posX, posY, posZ]);
   orbReflectShader.setUniform('uTintColor', tintColor.map(c => c / 255));
   orbReflectShader.setUniform('uTintAmount', tintAmount || 0);
+  orbReflectShader.setUniform('uKeyLightAmount', keyLightAmount === undefined ? 1 : keyLightAmount);
   sphere(size / 2, 24, 24);
   resetShader();
 }
@@ -460,6 +474,7 @@ function computeHitRadius(p) {
 
 function isHoveringAnyProject() {
   if (IS_TOUCH_DEVICE) return false;
+  if (bioOverlayOpen) return false;
 
   for (let i = 0; i < projects.length; i++) {
 	let p = projects[i];
@@ -477,8 +492,37 @@ function isHoveringAnyProject() {
   return false;
 }
 
+function updateDesktopHoverSelection() {
+  if (IS_TOUCH_DEVICE) return;
+  if (keyboardFocusIndex !== -1) return;
+  if (bioOverlayOpen) {
+	selectedIndex = -1;
+	return;
+  }
+
+  let hitIndex = -1;
+  let closestDist = Infinity;
+
+  for (let i = 0; i < projects.length; i++) {
+	let p = projects[i];
+	if (!p.screenVisible) continue;
+
+	let dx = mouseX - p.screenX;
+	let dy = mouseY - p.screenY;
+	let d = Math.sqrt(dx * dx + dy * dy);
+
+	if (d <= computeHitRadius(p) && d < closestDist) {
+	  closestDist = d;
+	  hitIndex = i;
+	}
+  }
+
+  selectedIndex = hitIndex;
+}
+
 function updateHoverCursor() {
   if (IS_TOUCH_DEVICE) return;
+  if (bioOverlayOpen) return;
 
   let hovering = false;
 
@@ -501,6 +545,8 @@ function updateHoverCursor() {
 function draw() {
   background(0);
 
+  updateDesktopHoverSelection();
+
   let targetTimeScale = (selectedIndex === -1) ? 1 : 0;
   timeScale = lerp(timeScale, targetTimeScale, TIME_SCALE_EASE);
 
@@ -509,7 +555,7 @@ function draw() {
   let blackHoleSize = BLACK_HOLE_SIZE + sin(blackHolePulsePhase) * BLACK_HOLE_PULSE_AMPLITUDE;
 
   let blackHoleHovering = false;
-  if (!IS_TOUCH_DEVICE && blackHole.screenVisible) {
+  if (!IS_TOUCH_DEVICE && !bioOverlayOpen && blackHole.screenVisible) {
 	let dx = mouseX - blackHole.screenX;
 	let dy = mouseY - blackHole.screenY;
 	let d = Math.sqrt(dx * dx + dy * dy);
@@ -540,7 +586,7 @@ function draw() {
 
   push();
   noStroke();
-  drawReflectiveOrb(blackHoleSize, 0, 0, 0, camEye, [0, 0, 0], 1);
+  drawReflectiveOrb(blackHoleSize, 0, 0, 0, camEye, [0, 0, 0], 1, 0);
   pop();
 
   let blackHoleProj = worldToScreen(0, 0, 0, camEye, camUp);
@@ -649,15 +695,11 @@ function updateOrbLabel() {
 
   if (labelPhase === 'idle') {
 	if (selectedIndex !== labelContentIndex) {
-	  if (labelContentIndex === -1) {
-		labelContentIndex = selectedIndex;
-	  } else {
-		labelPhase = 'fadeOut';
-		labelFadeOutUntil = millis() + LABEL_FADE_MS;
-		orbLabelEl.style.opacity = 0;
-		orbLabelEl.classList.remove('active');
-		return;
-	  }
+	  labelPhase = 'fadeOut';
+	  labelFadeOutUntil = millis() + LABEL_FADE_MS;
+	  orbLabelEl.style.opacity = 0;
+	  orbLabelEl.classList.remove('active');
+	  return;
 	}
   } else if (labelPhase === 'fadeOut') {
 	if (millis() < labelFadeOutUntil) return;
