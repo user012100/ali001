@@ -1,11 +1,11 @@
 let projects = [
-  { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, spinAngle: 4.2, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 82 },
-  { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, spinAngle: 0, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 76 },
-  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, spinAngle: 0.7, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 70 },
-  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 2.7, spinAngle: 1.4, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 78 },
-  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, spinAngle: 2.1, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 67 },
-  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 0.9, spinAngle: 2.8, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 74 },
-  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, spinAngle: 3.5, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 71 }
+  { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, orbitSpeed: 0.0015, size: 74 },
+  { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, orbitSpeed: 0.0015, size: 74 },
+  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, orbitSpeed: 0.0015, size: 74 },
+  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 2.7, orbitSpeed: 0.0015, size: 74 },
+  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, orbitSpeed: 0.0015, size: 74 },
+  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 0.9, orbitSpeed: 0.0015, size: 74 },
+  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, orbitSpeed: 0.0015, size: 74 }
 ];
 
 let skyImg;
@@ -82,36 +82,76 @@ const ORBIT_HOVER_SLOWDOWN = 0.15;
 const ORBIT_HOVER_EASE = 0.05;
 let orbitHoverScale = 1;
 
-function sizeLoadDot() {
-  let dot = document.getElementById('load-dot');
-  if (!dot) return;
-  let w = window.innerWidth;
-  let h = window.innerHeight;
-  let vFov = 2 * Math.atan((h / 2) / 800);
+function computeFitDistance(vFov, aspect) {
   let distForHeight = ORBIT_CONTENT_RADIUS / Math.tan(vFov / 2);
   let dist = distForHeight;
-  if (w / h >= 1) {
-	let distForWidth = ORBIT_CONTENT_RADIUS / (Math.tan(vFov / 2) * (w / h));
+  if (aspect >= 1) {
+	let distForWidth = ORBIT_CONTENT_RADIUS / (Math.tan(vFov / 2) * aspect);
 	dist = Math.max(distForHeight, distForWidth);
   }
   dist *= 1.15;
   if (IS_TOUCH_DEVICE) dist *= 1.45;
+  return dist;
+}
+
+function computeLoadDotDiameter() {
+  let w = window.innerWidth;
+  let h = window.innerHeight;
+  let vFov = 2 * Math.atan((h / 2) / 800);
+  let dist = computeFitDistance(vFov, w / h);
   dist = Math.min(Math.max(dist, 500), 4000);
-  let diameter = (BLACK_HOLE_SIZE * 800) / dist;
+  return (BLACK_HOLE_SIZE * 800) / dist;
+}
+
+function sizeDotElement(dot) {
+  if (!dot) return;
+  let diameter = computeLoadDotDiameter();
   dot.style.width = diameter + 'px';
   dot.style.height = diameter + 'px';
   dot.style.marginLeft = (-diameter / 2) + 'px';
   dot.style.marginTop = (-diameter / 2) + 'px';
 }
+
+function sizeLoadDot() {
+  sizeDotElement(document.getElementById('load-dot'));
+}
 sizeLoadDot();
 
+function computeDotHitDiameter() {
+  let visualRadius = computeLoadDotDiameter() / 2;
+  let hitRadius = IS_TOUCH_DEVICE ? Math.max(visualRadius * 1.1, 36) : Math.max(visualRadius * 1.6, 44);
+  return hitRadius * 2;
+}
+
+function sizeDotHitElement(dot) {
+  if (!dot) return;
+  let diameter = computeDotHitDiameter();
+  dot.style.width = diameter + 'px';
+  dot.style.height = diameter + 'px';
+  dot.style.marginLeft = (-diameter / 2) + 'px';
+  dot.style.marginTop = (-diameter / 2) + 'px';
+}
+
 const LOAD_DOT_DELAY_MS = 500;
-let loadDotTimer = setTimeout(() => {
+let loadDotShown = false;
+let loadDotTimer;
+if (IS_TOUCH_DEVICE) {
   let dot = document.getElementById('load-dot');
   if (dot) dot.classList.add('visible');
-}, LOAD_DOT_DELAY_MS);
+  loadDotShown = true;
+} else {
+  loadDotTimer = setTimeout(() => {
+	let dot = document.getElementById('load-dot');
+	if (dot) dot.classList.add('visible');
+	loadDotShown = true;
+  }, LOAD_DOT_DELAY_MS);
+}
 
 let bioOverlayEl;
+let bioCloseDotEl;
+let bioCloseDotVisualEl;
+let bioCloseDotClosing = false;
+let bioLinksContainerEl;
 let bioOverlayOpen = false;
 let bioLinks = [];
 let bioActiveLinks = new Set();
@@ -227,15 +267,36 @@ function setup() {
   applyVisitedState();
 
   bioOverlayEl = document.getElementById('bio-overlay');
+  bioLinksContainerEl = document.querySelector('.bio-overlay-links');
   bioOverlayEl.addEventListener('click', (e) => {
 	if (e.target.closest('a')) return;
+	if (e.target.closest('.bio-text')) return;
+	if (bioLinksContainerEl && e.clientY >= bioLinksContainerEl.getBoundingClientRect().top) return;
+	let selection = window.getSelection();
+	if (selection && selection.toString().length > 0) return;
 	closeBioOverlay();
   });
   bioOverlayEl.addEventListener('touchend', (e) => {
 	if (e.target.closest('a')) return;
+	if (e.target.closest('.bio-text')) return;
+	let touch = e.changedTouches[0];
+	if (bioLinksContainerEl && touch && touch.clientY >= bioLinksContainerEl.getBoundingClientRect().top) return;
 	e.preventDefault();
 	closeBioOverlay();
   });
+
+  bioCloseDotEl = document.getElementById('bio-close-dot');
+  bioCloseDotVisualEl = document.getElementById('bio-close-dot-visual');
+  bioCloseDotEl.addEventListener('click', (e) => {
+	e.stopPropagation();
+	bioCloseDotClosing = true;
+	shrinkBioCloseDot();
+	closeBioOverlay();
+  });
+  if (!IS_TOUCH_DEVICE) {
+	bioCloseDotEl.addEventListener('mouseenter', () => setBioCloseDotHover(true));
+	bioCloseDotEl.addEventListener('mouseleave', () => setBioCloseDotHover(false));
+  }
 
   bioLinks = Array.from(document.querySelectorAll('#bio-overlay .bio-overlay-links a'));
   if (IS_TOUCH_DEVICE) {
@@ -262,11 +323,27 @@ function setup() {
 function fadeOutLoadOverlay() {
   clearTimeout(loadDotTimer);
   let overlay = document.getElementById('load-overlay');
+  let dot = document.getElementById('load-dot');
   if (!overlay) return;
-  requestAnimationFrame(() => {
-	overlay.classList.add('hidden');
-	overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-  });
+  if (loadDotShown && !IS_TOUCH_DEVICE) {
+	if (dot) {
+	  dot.style.transitionDuration = '0.8s';
+	  dot.style.opacity = 0;
+	}
+	requestAnimationFrame(() => {
+	  overlay.classList.add('revealed');
+	  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+	});
+  } else {
+	if (dot) {
+	  dot.style.transitionDuration = '0.4s';
+	  dot.style.opacity = 0;
+	}
+	requestAnimationFrame(() => {
+	  overlay.classList.add('hidden');
+	  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+	});
+  }
 }
 
 function setBioLinkActive(a, active) {
@@ -334,6 +411,33 @@ function openBioOverlay() {
   bioOverlayEl.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bio-open');
   renderBioLinksMask();
+  bioCloseDotClosing = false;
+  if (bioCloseDotVisualEl) bioCloseDotVisualEl.style.opacity = 1;
+  updateBioCloseDot();
+}
+
+function updateBioCloseDot() {
+  sizeDotHitElement(bioCloseDotEl);
+  sizeDotElement(bioCloseDotVisualEl);
+}
+
+function setBioCloseDotHover(hovering) {
+  if (!bioCloseDotVisualEl) return;
+  if (bioCloseDotClosing) return;
+  let diameter = computeLoadDotDiameter() * (hovering ? BLACK_HOLE_HOVER_SCALE : 1);
+  bioCloseDotVisualEl.style.width = diameter + 'px';
+  bioCloseDotVisualEl.style.height = diameter + 'px';
+  bioCloseDotVisualEl.style.marginLeft = (-diameter / 2) + 'px';
+  bioCloseDotVisualEl.style.marginTop = (-diameter / 2) + 'px';
+}
+
+function shrinkBioCloseDot() {
+  if (!bioCloseDotVisualEl) return;
+  bioCloseDotVisualEl.style.width = '0px';
+  bioCloseDotVisualEl.style.height = '0px';
+  bioCloseDotVisualEl.style.marginLeft = '0px';
+  bioCloseDotVisualEl.style.marginTop = '0px';
+  bioCloseDotVisualEl.style.opacity = 0;
 }
 
 function closeBioOverlay() {
@@ -419,18 +523,7 @@ function windowResized() {
 }
 
 function computeCameraDistance() {
-  let vFov = currentVFov();
-  let aspect = width / height;
-  let distForHeight = ORBIT_CONTENT_RADIUS / tan(vFov / 2);
-  let dist = distForHeight;
-  if (aspect >= 1) {
-	let distForWidth = ORBIT_CONTENT_RADIUS / (tan(vFov / 2) * aspect);
-	dist = max(distForHeight, distForWidth);
-  }
-  dist *= 1.15;
-  if (IS_TOUCH_DEVICE) {
-	dist *= 1.45;
-  }
+  let dist = computeFitDistance(currentVFov(), width / height);
   return constrain(dist, 500, 4000);
 }
 
@@ -451,7 +544,7 @@ function currentVFov() {
   return 2 * Math.atan((height / 2) / 800);
 }
 
-function worldToScreen(x, y, z, eye, up) {
+function computeCameraBasis(eye, up) {
   let zLen = Math.sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z);
   let zx = eye.x / zLen, zy = eye.y / zLen, zz = eye.z / zLen;
 
@@ -465,10 +558,17 @@ function worldToScreen(x, y, z, eye, up) {
   let uy = rz * zx - rx * zz;
   let uz = rx * zy - ry * zx;
 
+  return { right: { x: rx, y: ry, z: rz }, up: { x: ux, y: uy, z: uz }, forward: { x: zx, y: zy, z: zz } };
+}
+
+function worldToScreen(x, y, z, eye, up) {
+  let basis = computeCameraBasis(eye, up);
+  let r = basis.right, u = basis.up, fwd = basis.forward;
+
   let relX = x - eye.x, relY = y - eye.y, relZ = z - eye.z;
-  let viewX = relX * rx + relY * ry + relZ * rz;
-  let viewY = relX * ux + relY * uy + relZ * uz;
-  let viewZ = relX * zx + relY * zy + relZ * zz;
+  let viewX = relX * r.x + relY * r.y + relZ * r.z;
+  let viewY = relX * u.x + relY * u.y + relZ * u.z;
+  let viewZ = relX * fwd.x + relY * fwd.y + relZ * fwd.z;
 
   let depth = -viewZ;
   if (depth <= 0.0001) return null;
@@ -491,22 +591,12 @@ function worldRadiusToScreenRadius(worldRadius, depth) {
 }
 
 function computeCameraLightDir(eye, up) {
-  let zLen = Math.sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z);
-  let zx = eye.x / zLen, zy = eye.y / zLen, zz = eye.z / zLen;
+  let basis = computeCameraBasis(eye, up);
+  let r = basis.right, u = basis.up, fwd = basis.forward;
 
-  let rx = up.y * zz - up.z * zy;
-  let ry = up.z * zx - up.x * zz;
-  let rz = up.x * zy - up.y * zx;
-  let rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
-  rx /= rLen; ry /= rLen; rz /= rLen;
-
-  let ux = ry * zz - rz * zy;
-  let uy = rz * zx - rx * zz;
-  let uz = rx * zy - ry * zx;
-
-  let lx = -rx * 0.5 + ux * 0.7 + zx * 0.5;
-  let ly = -ry * 0.5 + uy * 0.7 + zy * 0.5;
-  let lz = -rz * 0.5 + uz * 0.7 + zz * 0.5;
+  let lx = -r.x * 0.5 + u.x * 0.7 + fwd.x * 0.5;
+  let ly = -r.y * 0.5 + u.y * 0.7 + fwd.y * 0.5;
+  let lz = -r.z * 0.5 + u.z * 0.7 + fwd.z * 0.5;
   let lLen = Math.sqrt(lx * lx + ly * ly + lz * lz);
   return { x: lx / lLen, y: ly / lLen, z: lz / lLen };
 }
@@ -517,24 +607,38 @@ function computeHitRadius(p) {
 	: max(p.screenRadius * 1.6, 44);
 }
 
-function isHoveringAnyProject() {
-  if (IS_TOUCH_DEVICE) return false;
-  if (bioOverlayOpen) return false;
+function hitTestPoint(px, py, x, y, radius) {
+  let dx = px - x;
+  let dy = py - y;
+  return Math.sqrt(dx * dx + dy * dy) <= radius;
+}
+
+function findProjectHitIndex(px, py) {
+  let hitIndex = -1;
+  let closestDist = Infinity;
 
   for (let i = 0; i < projects.length; i++) {
 	let p = projects[i];
 	if (!p.screenVisible) continue;
 
-	let dx = mouseX - p.screenX;
-	let dy = mouseY - p.screenY;
+	let dx = px - p.screenX;
+	let dy = py - p.screenY;
 	let d = Math.sqrt(dx * dx + dy * dy);
 
-	if (d <= computeHitRadius(p)) {
-	  return true;
+	if (d <= computeHitRadius(p) && d < closestDist) {
+	  closestDist = d;
+	  hitIndex = i;
 	}
   }
 
-  return false;
+  return hitIndex;
+}
+
+function isHoveringAnyProject() {
+  if (IS_TOUCH_DEVICE) return false;
+  if (bioOverlayOpen) return false;
+
+  return findProjectHitIndex(mouseX, mouseY) !== -1;
 }
 
 function updateDesktopHoverSelection() {
@@ -545,24 +649,7 @@ function updateDesktopHoverSelection() {
 	return;
   }
 
-  let hitIndex = -1;
-  let closestDist = Infinity;
-
-  for (let i = 0; i < projects.length; i++) {
-	let p = projects[i];
-	if (!p.screenVisible) continue;
-
-	let dx = mouseX - p.screenX;
-	let dy = mouseY - p.screenY;
-	let d = Math.sqrt(dx * dx + dy * dy);
-
-	if (d <= computeHitRadius(p) && d < closestDist) {
-	  closestDist = d;
-	  hitIndex = i;
-	}
-  }
-
-  selectedIndex = hitIndex;
+  selectedIndex = findProjectHitIndex(mouseX, mouseY);
 }
 
 function updateCameraOrientation() {
@@ -598,7 +685,8 @@ function updateCameraOrientation() {
 	}
   }
 
-  let targetVelocity = dragging ? dragDeltaX * CAMERA_DRAG_YAW_SENSITIVITY : 0;
+  let yawDirection = (dragging && currentY < height / 2) ? -1 : 1;
+  let targetVelocity = dragging ? dragDeltaX * CAMERA_DRAG_YAW_SENSITIVITY * yawDirection : 0;
   let ease = dragging ? CAMERA_YAW_VELOCITY_EASE : CAMERA_YAW_INERTIA_DAMPING;
   camYawVelocity = lerp(camYawVelocity, targetVelocity, ease);
 
@@ -614,8 +702,8 @@ function updateCameraOrientation() {
 	let totalDragX = currentX - dragStartX;
 	let totalDragY = currentY - dragStartY;
 	camTiltTargetZ = softClampTilt(camTiltZBase + totalDragX * CAMERA_TILT_SENSITIVITY);
-	camTiltTargetX = softClampTilt(camTiltXBase - totalDragY * CAMERA_TILT_SENSITIVITY);
-	let instantTiltVelocityX = -dragDeltaY * CAMERA_TILT_SENSITIVITY;
+	camTiltTargetX = softClampTilt(camTiltXBase + totalDragY * CAMERA_TILT_SENSITIVITY);
+	let instantTiltVelocityX = dragDeltaY * CAMERA_TILT_SENSITIVITY;
 	camTiltVelocityX = lerp(camTiltVelocityX, instantTiltVelocityX, CAMERA_TILT_VELOCITY_EASE);
   } else {
 
@@ -627,29 +715,26 @@ function updateCameraOrientation() {
   camTiltX = lerp(camTiltX, camTiltTargetX, CAMERA_TILT_EASE);
 }
 
+function isHoveringBlackHole() {
+  if (IS_TOUCH_DEVICE) return false;
+  if (bioOverlayOpen) return false;
+  if (!blackHole.screenVisible) return false;
+  return hitTestPoint(mouseX, mouseY, blackHole.screenX, blackHole.screenY, computeHitRadius(blackHole));
+}
+
 function updateHoverCursor() {
   if (IS_TOUCH_DEVICE) return;
-  if (bioOverlayOpen) return;
+  if (bioOverlayOpen) {
+	document.body.style.cursor = 'default';
+	return;
+  }
 
   if (isDraggingCamera) {
 	document.body.style.cursor = 'grabbing';
 	return;
   }
 
-  let hovering = false;
-
-  if (blackHole.screenVisible) {
-	let dx = mouseX - blackHole.screenX;
-	let dy = mouseY - blackHole.screenY;
-	let d = Math.sqrt(dx * dx + dy * dy);
-	if (d <= computeHitRadius(blackHole)) {
-	  hovering = true;
-	}
-  }
-
-  if (!hovering && isHoveringAnyProject()) {
-	hovering = true;
-  }
+  let hovering = isHoveringBlackHole() || isHoveringAnyProject();
 
   document.body.style.cursor = hovering ? 'pointer' : 'default';
 }
@@ -666,15 +751,7 @@ function draw() {
   blackHolePulsePhase += BLACK_HOLE_PULSE_SPEED * timeScale;
   let blackHoleSize = BLACK_HOLE_SIZE + sin(blackHolePulsePhase) * BLACK_HOLE_PULSE_AMPLITUDE;
 
-  let blackHoleHovering = false;
-  if (!IS_TOUCH_DEVICE && !bioOverlayOpen && blackHole.screenVisible) {
-	let dx = mouseX - blackHole.screenX;
-	let dy = mouseY - blackHole.screenY;
-	let d = Math.sqrt(dx * dx + dy * dy);
-	if (d <= computeHitRadius(blackHole)) {
-	  blackHoleHovering = true;
-	}
-  }
+  let blackHoleHovering = isHoveringBlackHole();
   blackHoleHoverScale = lerp(blackHoleHoverScale, blackHoleHovering ? BLACK_HOLE_HOVER_SCALE : 1, BLACK_HOLE_HOVER_EASE);
   blackHoleSize *= blackHoleHoverScale;
 
@@ -800,7 +877,6 @@ function draw() {
 	  p.screenVisible = false;
 	}
 	p.orbitAngle += p.orbitSpeed * timeScale * orbitHoverScale;
-	p.spinAngle += p.spinSpeed * timeScale;
   }
   updateHoverCursor();
   updateOrbLabel();
@@ -874,33 +950,12 @@ function updateOrbLinkHitzone() {
 }
 
 function handleTap(px, py) {
-  if (blackHole.screenVisible) {
-	let dx = px - blackHole.screenX;
-	let dy = py - blackHole.screenY;
-	let d = Math.sqrt(dx * dx + dy * dy);
-	if (d <= computeHitRadius(blackHole)) {
-	  openBioOverlay();
-	  return;
-	}
+  if (blackHole.screenVisible && hitTestPoint(px, py, blackHole.screenX, blackHole.screenY, computeHitRadius(blackHole))) {
+	openBioOverlay();
+	return;
   }
 
-  let hitIndex = -1;
-  let closestDist = Infinity;
-
-  for (let i = 0; i < projects.length; i++) {
-	let p = projects[i];
-	if (!p.screenVisible) continue;
-
-	let dx = px - p.screenX;
-	let dy = py - p.screenY;
-	let d = Math.sqrt(dx * dx + dy * dy);
-	let hitRadius = computeHitRadius(p);
-
-	if (d <= hitRadius && d < closestDist) {
-	  closestDist = d;
-	  hitIndex = i;
-	}
-  }
+  let hitIndex = findProjectHitIndex(px, py);
 
   if (hitIndex !== -1 && hitIndex === selectedIndex) {
 	pendingOpenIndex = hitIndex;
@@ -920,15 +975,29 @@ function navigateBioLink(a) {
   window.location.href = href;
 }
 
+function beginCameraDrag(x, y) {
+  isDraggingCamera = true;
+  dragMoved = false;
+  dragStartX = x;
+  dragStartY = y;
+  camTiltXBase = camTiltX;
+  camTiltZBase = camTiltZ;
+}
+
+function finalizeTap(x, y) {
+  handleTap(x, y);
+  if (pendingOpenIndex !== -1) {
+	let p = projects[pendingOpenIndex];
+	openInNewTab(p.url);
+	markProjectVisited(p);
+	pendingOpenIndex = -1;
+  }
+}
+
 function mousePressed(event) {
   if (bioOverlayOpen) return false;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
-  isDraggingCamera = true;
-  dragMoved = false;
-  dragStartX = mouseX;
-  dragStartY = mouseY;
-  camTiltXBase = camTiltX;
-  camTiltZBase = camTiltZ;
+  beginCameraDrag(mouseX, mouseY);
   return false;
 }
 
@@ -937,15 +1006,7 @@ function mouseReleased(event) {
   isDraggingCamera = false;
   if (bioOverlayOpen) return false;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
-  if (!dragMoved) {
-	handleTap(mouseX, mouseY);
-	if (pendingOpenIndex !== -1) {
-	  let p = projects[pendingOpenIndex];
-	  openInNewTab(p.url);
-	  markProjectVisited(p);
-	  pendingOpenIndex = -1;
-	}
-  }
+  if (!dragMoved) finalizeTap(mouseX, mouseY);
   return false;
 }
 
@@ -953,14 +1014,9 @@ function touchStarted(event) {
   if (bioOverlayOpen) return false;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
   if (touches.length > 0) {
-	isDraggingCamera = true;
-	dragMoved = false;
-	dragStartX = touches[0].x;
-	dragStartY = touches[0].y;
+	beginCameraDrag(touches[0].x, touches[0].y);
 	lastTouchDragX = touches[0].x;
 	lastTouchDragY = touches[0].y;
-	camTiltXBase = camTiltX;
-	camTiltZBase = camTiltZ;
   }
   return false;
 }
@@ -972,15 +1028,7 @@ function touchEnded(event) {
   lastTouchDragX = null;
   lastTouchDragY = null;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
-  if (!dragMoved) {
-	handleTap(dragStartX, dragStartY);
-	if (pendingOpenIndex !== -1) {
-	  let p = projects[pendingOpenIndex];
-	  openInNewTab(p.url);
-	  markProjectVisited(p);
-	  pendingOpenIndex = -1;
-	}
-  }
+  if (!dragMoved) finalizeTap(dragStartX, dragStartY);
   return false;
 }
 

@@ -13,13 +13,22 @@ canvas {
   outline: none;
 }
 
+@property --reveal-radius {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
 #load-overlay {
   position: fixed;
   inset: 0;
   background: #000000;
   z-index: 30;
   opacity: 1;
-  transition: opacity 0.8s ease;
+  --reveal-radius: 0%;
+  mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
+  transition: opacity 0.4s ease, --reveal-radius 0.8s ease;
   pointer-events: none;
 }
 
@@ -27,15 +36,21 @@ canvas {
   opacity: 0;
 }
 
+#load-overlay.revealed {
+  --reveal-radius: 100%;
+}
+
 #load-dot {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 50%;
+  z-index: 31;
   border-radius: 50%;
-  background: #ffffff;
+  background: #456A92;
   opacity: 0;
   transition: opacity 0.3s ease;
   animation: load-dot-pulse 8.7s ease-in-out infinite;
+  pointer-events: none;
 }
 
 #load-dot.visible {
@@ -110,7 +125,6 @@ canvas {
 #bio-overlay.open {
   clip-path: circle(150% at 50% 50%);
   pointer-events: auto;
-  cursor: pointer;
 }
 
 .bio-overlay-content {
@@ -126,6 +140,7 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 2lh;
+  cursor: default;
 }
 
 .bio-overlay-content p {
@@ -133,6 +148,11 @@ canvas {
   font-size: clamp(3rem, 11vw, 6.875rem);
   font-weight: 600;
   line-height: 1.1;
+}
+
+.bio-text {
+  cursor: default;
+  user-select: none;
 }
 
 .bio-overlay-content a {
@@ -143,4 +163,35 @@ canvas {
 
 .bio-overlay-content a.bio-link-active {
   color: #ffffff;
+}
+
+#bio-close-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  clip-path: circle(50%);
+  background: transparent;
+  cursor: pointer;
+  transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease;
+}
+
+#bio-close-dot-visual {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin: 0;
+  opacity: 0;
+  border-radius: 50%;
+  background: #456A92;
+  pointer-events: none;
+  transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease, opacity 0.15s ease;
+  animation: load-dot-pulse 8.7s ease-in-out infinite;
 }
