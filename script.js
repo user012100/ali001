@@ -85,6 +85,25 @@ const ORBIT_HOVER_SLOWDOWN = 0.15;
 const ORBIT_HOVER_EASE = 0.05;
 let orbitHoverScale = 1;
 
+let scrollTouchStartY = null;
+let scrollTouchLastY = null;
+let scrollTouchLastX = null;
+
+const BIO_SCROLL_SENSITIVITY = 0.0016;
+const BIO_TOUCH_SENSITIVITY = 0.0022;
+const BIO_REVEAL_EASE = 0.12;
+const BIO_REVEAL_CLOSE_FAST_EASE = 0.5;
+const BIO_REVEAL_CLOSE_FAST_THRESHOLD = 0.67;
+const BIO_REVEAL_OPEN_SETTLE_EASE = 0.06;
+const BIO_WHEEL_IDLE_MS = 350;
+let bioRevealTarget = 0;
+let bioRevealProgress = 0;
+let bioCloseDotRevealed = false;
+let bioGestureActive = false;
+let bioGestureAnchor = 0;
+let bioLastScrollDirection = 0;
+let bioWheelIdleTimer = null;
+
 function computeFitDistance(vFov, aspect) {
   let distForHeight = ORBIT_CONTENT_RADIUS / Math.tan(vFov / 2);
   let dist = distForHeight;
@@ -122,7 +141,7 @@ sizeLoadDot();
 
 function computeDotHitDiameter() {
   let visualRadius = computeLoadDotDiameter() / 2;
-  let hitRadius = IS_TOUCH_DEVICE ? Math.max(visualRadius * 1.1, 36) : Math.max(visualRadius * 1.6, 44);
+  let hitRadius = IS_TOUCH_DEVICE ? Math.max(visualRadius * 1.1, 36) * 1.5 : Math.max(visualRadius * 1.6, 44);
   return hitRadius * 2;
 }
 
@@ -271,22 +290,6 @@ function setup() {
 
   bioOverlayEl = document.getElementById('bio-overlay');
   bioLinksContainerEl = document.querySelector('.bio-overlay-links');
-  bioOverlayEl.addEventListener('click', (e) => {
-	if (e.target.closest('a')) return;
-	if (e.target.closest('.bio-text')) return;
-	if (bioLinksContainerEl && e.clientY >= bioLinksContainerEl.getBoundingClientRect().top) return;
-	let selection = window.getSelection();
-	if (selection && selection.toString().length > 0) return;
-	closeBioOverlay();
-  });
-  bioOverlayEl.addEventListener('touchend', (e) => {
-	if (e.target.closest('a')) return;
-	if (e.target.closest('.bio-text')) return;
-	let touch = e.changedTouches[0];
-	if (bioLinksContainerEl && touch && touch.clientY >= bioLinksContainerEl.getBoundingClientRect().top) return;
-	e.preventDefault();
-	closeBioOverlay();
-  });
 
   bioCloseDotEl = document.getElementById('bio-close-dot');
   bioCloseDotVisualEl = document.getElementById('bio-close-dot-visual');
@@ -296,6 +299,13 @@ function setup() {
 	shrinkBioCloseDot();
 	closeBioOverlay();
   });
+  bioCloseDotEl.addEventListener('touchend', (e) => {
+	e.preventDefault();
+	e.stopPropagation();
+	bioCloseDotClosing = true;
+	shrinkBioCloseDot();
+	closeBioOverlay();
+  }, { passive: false });
   if (!IS_TOUCH_DEVICE) {
 	bioCloseDotEl.addEventListener('mouseenter', () => setBioCloseDotHover(true));
 	bioCloseDotEl.addEventListener('mouseleave', () => setBioCloseDotHover(false));
@@ -320,7 +330,100 @@ function setup() {
 	}, { passive: false });
   });
 
+  window.addEventListener('wheel', handleScrollWheel, { passive: true });
+  window.addEventListener('touchstart', handleScrollTouchStart, { passive: true });
+  window.addEventListener('touchmove', handleScrollTouchMove, { passive: true });
+  window.addEventListener('touchend', handleScrollTouchEnd, { passive: true });
+
   fadeOutLoadOverlay();
+}
+
+function handleScrollWheel(e) {
+  updateBioRevealFromInput(e.deltaY * BIO_SCROLL_SENSITIVITY);
+  clearTimeout(bioWheelIdleTimer);
+  bioWheelIdleTimer = setTimeout(endBioScrollGesture, BIO_WHEEL_IDLE_MS);
+}
+
+function handleScrollTouchStart(e) {
+  if (e.touches.length !== 1) {
+	scrollTouchStartY = null;
+	scrollTouchLastY = null;
+	scrollTouchLastX = null;
+	return;
+  }
+  scrollTouchStartY = e.touches[0].clientY;
+  scrollTouchLastY = scrollTouchStartY;
+  scrollTouchLastX = e.touches[0].clientX;
+}
+
+function handleScrollTouchMove(e) {
+  if (isDraggingCamera && dragMoved) return;
+  if (scrollTouchLastY === null || e.touches.length !== 1) return;
+  let x = e.touches[0].clientX;
+  let y = e.touches[0].clientY;
+  let fingerDeltaX = x - scrollTouchLastX;
+  let fingerDeltaY = y - scrollTouchLastY;
+  scrollTouchLastX = x;
+  scrollTouchLastY = y;
+  if (Math.abs(fingerDeltaX) > Math.abs(fingerDeltaY)) return;
+  updateBioRevealFromInput(-fingerDeltaY * BIO_TOUCH_SENSITIVITY);
+}
+
+function handleScrollTouchEnd(e) {
+  scrollTouchStartY = null;
+  scrollTouchLastY = null;
+  scrollTouchLastX = null;
+  endBioScrollGesture();
+}
+
+function updateBioRevealFromInput(delta) {
+  if (delta === 0) return;
+  if (!bioGestureActive) {
+	bioGestureActive = true;
+	bioGestureAnchor = (bioRevealTarget > 0.5) ? 1 : 0;
+  }
+  bioLastScrollDirection = (delta > 0) ? 1 : -1;
+  bioRevealTarget = Math.min(1, Math.max(0, bioRevealTarget + delta));
+  if (bioRevealTarget > 0 && !bioOverlayOpen) settleBioOpenState();
+}
+
+function endBioScrollGesture() {
+  if (!bioGestureActive) return;
+  bioGestureActive = false;
+  let movingAwayFromAnchor = (bioGestureAnchor === 0 && bioLastScrollDirection > 0)
+	|| (bioGestureAnchor === 1 && bioLastScrollDirection < 0);
+  bioRevealTarget = movingAwayFromAnchor ? (1 - bioGestureAnchor) : bioGestureAnchor;
+  if (bioRevealTarget > 0 && !bioOverlayOpen) settleBioOpenState();
+}
+
+function updateBioReveal() {
+  let closing = bioRevealTarget < bioRevealProgress;
+  let growing = bioRevealTarget > bioRevealProgress;
+  let ease = BIO_REVEAL_EASE;
+  if (closing && bioRevealProgress > BIO_REVEAL_CLOSE_FAST_THRESHOLD) {
+	ease = BIO_REVEAL_CLOSE_FAST_EASE;
+  } else if (growing && !bioGestureActive) {
+	ease = BIO_REVEAL_OPEN_SETTLE_EASE;
+  }
+  bioRevealProgress = lerp(bioRevealProgress, bioRevealTarget, ease);
+  applyBioRevealCss();
+
+  if (bioOverlayOpen && !bioCloseDotRevealed && bioRevealTarget >= 1 && bioRevealProgress >= 0.6) {
+	bioCloseDotRevealed = true;
+	if (bioCloseDotVisualEl) bioCloseDotVisualEl.style.opacity = 1;
+	updateBioCloseDot();
+  }
+
+  if (bioOverlayOpen && bioRevealTarget <= 0 && bioRevealProgress < 0.002) {
+	bioRevealProgress = 0;
+	applyBioRevealCss();
+	finalizeBioClose();
+  }
+}
+
+function applyBioRevealCss() {
+  if (!bioOverlayEl) return;
+  bioOverlayEl.style.setProperty('--bio-reveal', (bioRevealProgress * 150) + '%');
 }
 
 function fadeOutLoadOverlay() {
@@ -403,20 +506,21 @@ function escapeXmlText(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-const BIO_OVERLAY_CLOSE_MS = 400;
-
 function openBioOverlay() {
   if (bioOverlayOpen) return;
+  bioRevealTarget = 1;
+  settleBioOpenState();
+}
+
+function settleBioOpenState() {
   bioOverlayOpen = true;
-  bioOverlayEl.style.transitionDuration = '';
-  bioOverlayEl.style.transitionTimingFunction = '';
   bioOverlayEl.classList.add('open');
   bioOverlayEl.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bio-open');
   renderBioLinksMask();
   bioCloseDotClosing = false;
-  if (bioCloseDotVisualEl) bioCloseDotVisualEl.style.opacity = 1;
-  updateBioCloseDot();
+  bioCloseDotRevealed = false;
+  shrinkBioCloseDot();
 }
 
 function updateBioCloseDot() {
@@ -445,22 +549,15 @@ function shrinkBioCloseDot() {
 
 function closeBioOverlay() {
   if (!bioOverlayOpen) return;
+  bioRevealTarget = 0;
+}
+
+function finalizeBioClose() {
   bioOverlayOpen = false;
-  bioOverlayEl.style.transitionDuration = `${BIO_OVERLAY_CLOSE_MS}ms`;
-  bioOverlayEl.style.transitionTimingFunction = 'cubic-bezier(0.05, 0.85, 0.1, 1)';
+  bioCloseDotRevealed = false;
   bioOverlayEl.classList.remove('open');
   bioOverlayEl.setAttribute('aria-hidden', 'true');
-
-  let resetOnce = () => {
-	bioOverlayEl.removeEventListener('transitionend', onTransitionEnd);
-	clearTimeout(fallbackTimer);
-	resetBioLinksAfterClose();
-  };
-  let onTransitionEnd = (e) => {
-	if (e.propertyName === 'clip-path') resetOnce();
-  };
-  bioOverlayEl.addEventListener('transitionend', onTransitionEnd);
-  let fallbackTimer = setTimeout(resetOnce, BIO_OVERLAY_CLOSE_MS + 50);
+  resetBioLinksAfterClose();
 }
 
 function resetBioLinksAfterClose() {
@@ -750,6 +847,7 @@ function draw() {
   timeScale = lerp(timeScale, targetTimeScale, TIME_SCALE_EASE);
 
   updateCameraOrientation();
+  updateBioReveal();
   blackHolePulsePhase += BLACK_HOLE_PULSE_SPEED * timeScale;
   let blackHoleSize = BLACK_HOLE_SIZE + sin(blackHolePulsePhase) * BLACK_HOLE_PULSE_AMPLITUDE;
 

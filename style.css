@@ -105,6 +105,12 @@ canvas {
   }
 }
 
+@property --bio-reveal {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
 #bio-overlay {
   position: fixed;
   inset: 0;
@@ -116,14 +122,13 @@ canvas {
   justify-content: flex-start;
   padding: 2rem;
   box-sizing: border-box;
-  clip-path: circle(0% at 50% 50%);
-  transition: clip-path 0.6s ease;
+  --bio-reveal: 0%;
+  clip-path: circle(var(--bio-reveal) at 50% 50%);
   z-index: 20;
   pointer-events: none;
 }
 
 #bio-overlay.open {
-  clip-path: circle(150% at 50% 50%);
   pointer-events: auto;
 }
 
