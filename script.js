@@ -1,10 +1,10 @@
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, spinAngle: 4.2, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 82 },
   { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 0, spinAngle: 0, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 76 },
-  { title: "[untold]", year: 2026, url: "https://user012100.github.io/functions", orbitAngle: 0.9, spinAngle: 0.7, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 70 },
-  { title: "Gossip", year: 2026, url: "https://user012100.github.io/links", orbitAngle: 1.8, spinAngle: 1.4, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 78 },
-  { title: "Persistence of Memory", year: 2025, url: "https://user012100.github.io/binding", orbitAngle: 2.7, spinAngle: 2.1, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 67 },
-  { title: "Cult of the Ugly", year: 2025, url: "https://user012100.github.io/spread", orbitAngle: 3.6, spinAngle: 2.8, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 74 },
+  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 0.9, spinAngle: 0.7, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 70 },
+  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 1.8, spinAngle: 1.4, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 78 },
+  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 2.7, spinAngle: 2.1, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 67 },
+  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 3.6, spinAngle: 2.8, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 74 },
   { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 4.5, spinAngle: 3.5, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 71 }
 ];
 
