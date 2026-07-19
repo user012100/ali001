@@ -1,11 +1,11 @@
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, spinAngle: 4.2, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 82 },
-  { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 0, spinAngle: 0, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 76 },
-  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 0.9, spinAngle: 0.7, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 70 },
-  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 1.8, spinAngle: 1.4, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 78 },
-  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 2.7, spinAngle: 2.1, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 67 },
-  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 3.6, spinAngle: 2.8, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 74 },
-  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 4.5, spinAngle: 3.5, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 71 }
+  { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, spinAngle: 0, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 76 },
+  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, spinAngle: 0.7, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 70 },
+  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 2.7, spinAngle: 1.4, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 78 },
+  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, spinAngle: 2.1, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 67 },
+  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 0.9, spinAngle: 2.8, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 74 },
+  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, spinAngle: 3.5, orbitSpeed: 0.0015, spinSpeed: 0.003, size: 71 }
 ];
 
 let skyImg;
@@ -31,8 +31,38 @@ const ORBIT_MAJOR_RADIUS = 380;
 const ORBIT_MINOR_RADIUS = 210;
 const ORBIT_CONTENT_RADIUS = ORBIT_MAJOR_RADIUS + 90;
 
-let camYaw = 0;
+let camYaw = Math.PI;
 const CAM_AUTO_ROTATE_SPEED = 0.0009;
+
+const CAMERA_DRAG_YAW_SENSITIVITY = 0.0015;
+const CAMERA_DRAG_CLICK_THRESHOLD = 8;
+const CAMERA_YAW_VELOCITY_EASE = 0.15;
+const CAMERA_YAW_INERTIA_DAMPING = 0.04;
+let isDraggingCamera = false;
+let dragMoved = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let lastTouchDragX = null;
+let lastTouchDragY = null;
+let camYawVelocity = 0;
+
+// The other 2 rotation axes (pitch/roll-style tilt of the eye off the
+// straight-overhead position), driven by the TOTAL drag offset since the
+// drag started (not per-frame velocity), clamped to a small range so the
+// view never flips/goes too far. Tilt persists after the drag ends (no
+// spring-back to center) - each new drag continues from wherever it was left.
+const CAMERA_TILT_MAX_DEG = 25;
+const CAMERA_TILT_SENSITIVITY = 0.0011;
+const CAMERA_TILT_EASE = 0.18;
+const CAMERA_TILT_VELOCITY_EASE = 0.3;
+const CAMERA_TILT_INERTIA_DAMPING = 0.02;
+let camTiltX = 0;
+let camTiltZ = 0;
+let camTiltXBase = 0;
+let camTiltZBase = 0;
+let camTiltTargetX = 0;
+let camTiltTargetZ = 0;
+let camTiltVelocityX = 0;
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
@@ -130,6 +160,7 @@ precision mediump float;
 
 uniform sampler2D uEnvMap;
 uniform vec3 uEyePosition;
+uniform vec3 uLightDir;
 uniform vec3 uTintColor;
 uniform float uTintAmount;
 uniform float uKeyLightAmount;
@@ -139,9 +170,11 @@ varying vec3 vWorldNormal;
 
 #define PI 3.14159265359
 
-// Fixed warm "sun" key light used purely for a soft specular highlight/rim
-// on the mirror orbs (the env map reflection alone can look flat without it).
-const vec3 LIGHT_DIR = vec3(0.4, 0.55, 0.45); // points from surface toward the light
+// Warm "sun" key light used purely for a soft specular highlight/rim on the
+// mirror orbs (the env map reflection alone can look flat without it).
+// Direction is supplied camera-relatively (see uLightDir/computeCameraLightDir
+// in script.js) so the highlight stays anchored to the viewer's screen
+// instead of sweeping around the sphere as the camera is dragged.
 const vec3 LIGHT_COLOR = vec3(1.0, 0.93, 0.8);
 
 void main() {
@@ -156,7 +189,7 @@ void main() {
 
   float fresnel = pow(1.0 - max(dot(normal, -incident), 0.0), 3.0);
 
-  vec3 lightDir = normalize(LIGHT_DIR);
+  vec3 lightDir = normalize(uLightDir);
   vec3 viewDir = -incident;
   vec3 halfVec = normalize(lightDir + viewDir);
   float specular = pow(max(dot(normal, halfVec), 0.0), 50.0);
@@ -411,10 +444,11 @@ function computeCameraDistance() {
   return constrain(dist, 500, 4000);
 }
 
-function drawReflectiveOrb(size, posX, posY, posZ, eye, tintColor, tintAmount, keyLightAmount) {
+function drawReflectiveOrb(size, posX, posY, posZ, eye, lightDir, tintColor, tintAmount, keyLightAmount) {
   shader(orbReflectShader);
   orbReflectShader.setUniform('uEnvMap', citrusImg);
   orbReflectShader.setUniform('uEyePosition', [eye.x, eye.y, eye.z]);
+  orbReflectShader.setUniform('uLightDir', [lightDir.x, lightDir.y, lightDir.z]);
   orbReflectShader.setUniform('uOrbTranslation', [posX, posY, posZ]);
   orbReflectShader.setUniform('uTintColor', tintColor.map(c => c / 255));
   orbReflectShader.setUniform('uTintAmount', tintAmount || 0);
@@ -464,6 +498,31 @@ function worldToScreen(x, y, z, eye, up) {
 function worldRadiusToScreenRadius(worldRadius, depth) {
   let tanHalf = Math.tan(currentVFov() / 2);
   return (worldRadius / (depth * tanHalf)) * (height / 2);
+}
+
+// Computes a key-light direction expressed in camera space (-right + up +
+// toward-camera) so the specular highlight on the mirror orbs stays anchored
+// to the viewer's top-left regardless of camYaw/camTilt drag, rather than
+// sweeping around the sphere like a world-fixed light would.
+function computeCameraLightDir(eye, up) {
+  let zLen = Math.sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z);
+  let zx = eye.x / zLen, zy = eye.y / zLen, zz = eye.z / zLen;
+
+  let rx = up.y * zz - up.z * zy;
+  let ry = up.z * zx - up.x * zz;
+  let rz = up.x * zy - up.y * zx;
+  let rLen = Math.sqrt(rx * rx + ry * ry + rz * rz);
+  rx /= rLen; ry /= rLen; rz /= rLen;
+
+  let ux = ry * zz - rz * zy;
+  let uy = rz * zx - rx * zz;
+  let uz = rx * zy - ry * zx;
+
+  let lx = -rx * 0.5 + ux * 0.7 + zx * 0.5;
+  let ly = -ry * 0.5 + uy * 0.7 + zy * 0.5;
+  let lz = -rz * 0.5 + uz * 0.7 + zz * 0.5;
+  let lLen = Math.sqrt(lx * lx + ly * ly + lz * lz);
+  return { x: lx / lLen, y: ly / lLen, z: lz / lLen };
 }
 
 function computeHitRadius(p) {
@@ -520,9 +579,81 @@ function updateDesktopHoverSelection() {
   selectedIndex = hitIndex;
 }
 
+function updateCameraOrientation() {
+  let dragDeltaX = 0;
+  let dragDeltaY = 0;
+  let dragging = false;
+  let currentX = 0;
+  let currentY = 0;
+
+  if (isDraggingCamera && !bioOverlayOpen) {
+	if (IS_TOUCH_DEVICE) {
+	  if (touches.length > 0) {
+		currentX = touches[0].x;
+		currentY = touches[0].y;
+		if (!dragMoved && (Math.abs(currentX - dragStartX) > CAMERA_DRAG_CLICK_THRESHOLD || Math.abs(currentY - dragStartY) > CAMERA_DRAG_CLICK_THRESHOLD)) {
+		  dragMoved = true;
+		}
+		if (lastTouchDragX !== null) dragDeltaX = currentX - lastTouchDragX;
+		if (lastTouchDragY !== null) dragDeltaY = currentY - lastTouchDragY;
+		lastTouchDragX = currentX;
+		lastTouchDragY = currentY;
+		dragging = true;
+	  }
+	} else {
+	  currentX = mouseX;
+	  currentY = mouseY;
+	  if (!dragMoved && (Math.abs(currentX - dragStartX) > CAMERA_DRAG_CLICK_THRESHOLD || Math.abs(currentY - dragStartY) > CAMERA_DRAG_CLICK_THRESHOLD)) {
+		dragMoved = true;
+	  }
+	  dragDeltaX = mouseX - pmouseX;
+	  dragDeltaY = mouseY - pmouseY;
+	  dragging = true;
+	}
+  }
+
+  let targetVelocity = dragging ? dragDeltaX * CAMERA_DRAG_YAW_SENSITIVITY : 0;
+  let ease = dragging ? CAMERA_YAW_VELOCITY_EASE : CAMERA_YAW_INERTIA_DAMPING;
+  camYawVelocity = lerp(camYawVelocity, targetVelocity, ease);
+
+  camYaw += camYawVelocity;
+  if (!dragging) {
+	camYaw += CAM_AUTO_ROTATE_SPEED * timeScale;
+  }
+
+  let maxTiltRad = CAMERA_TILT_MAX_DEG * (Math.PI / 180);
+  // Soft clamp: eases/slows down as it nears the limit instead of hitting a
+  // hard wall, via tanh saturation (behaves ~linearly near 0, flattens out
+  // and approaches, but never exceeds, +/-maxTiltRad).
+  let softClampTilt = (value) => maxTiltRad * Math.tanh(value / maxTiltRad);
+  if (dragging) {
+	let totalDragX = currentX - dragStartX;
+	let totalDragY = currentY - dragStartY;
+	camTiltTargetZ = softClampTilt(camTiltZBase + totalDragX * CAMERA_TILT_SENSITIVITY);
+	camTiltTargetX = softClampTilt(camTiltXBase - totalDragY * CAMERA_TILT_SENSITIVITY);
+	let instantTiltVelocityX = -dragDeltaY * CAMERA_TILT_SENSITIVITY;
+	camTiltVelocityX = lerp(camTiltVelocityX, instantTiltVelocityX, CAMERA_TILT_VELOCITY_EASE);
+  } else {
+	// Let the up/down tilt keep gliding on its last velocity, decaying slowly,
+	// so a fast vertical drag carries momentum instead of stopping dead.
+	camTiltVelocityX = lerp(camTiltVelocityX, 0, CAMERA_TILT_INERTIA_DAMPING);
+	camTiltTargetX = softClampTilt(camTiltTargetX + camTiltVelocityX);
+  }
+  // Always ease toward the current target, even after the drag ends, so the
+  // tilt keeps gliding/decelerating smoothly into place instead of freezing
+  // mid-motion the instant the drag stops.
+  camTiltZ = lerp(camTiltZ, camTiltTargetZ, CAMERA_TILT_EASE);
+  camTiltX = lerp(camTiltX, camTiltTargetX, CAMERA_TILT_EASE);
+}
+
 function updateHoverCursor() {
   if (IS_TOUCH_DEVICE) return;
   if (bioOverlayOpen) return;
+
+  if (isDraggingCamera) {
+	document.body.style.cursor = 'grabbing';
+	return;
+  }
 
   let hovering = false;
 
@@ -550,7 +681,7 @@ function draw() {
   let targetTimeScale = (selectedIndex === -1) ? 1 : 0;
   timeScale = lerp(timeScale, targetTimeScale, TIME_SCALE_EASE);
 
-  camYaw += CAM_AUTO_ROTATE_SPEED * timeScale;
+  updateCameraOrientation();
   blackHolePulsePhase += BLACK_HOLE_PULSE_SPEED * timeScale;
   let blackHoleSize = BLACK_HOLE_SIZE + sin(blackHolePulsePhase) * BLACK_HOLE_PULSE_AMPLITUDE;
 
@@ -571,11 +702,16 @@ function draw() {
   let camDist = computeCameraDistance();
   let upX = sin(camYaw);
   let upZ = cos(camYaw);
-  camera(0, camDist, 0, 0, 0, 0, upX, 0, upZ);
-  let camEye = { x: 0, y: camDist, z: 0 };
+  let eyeX = -camDist * cos(camTiltX) * sin(camTiltZ);
+  let eyeY = camDist * cos(camTiltX) * cos(camTiltZ);
+  let eyeZ = camDist * sin(camTiltX);
+  camera(eyeX, eyeY, eyeZ, 0, 0, 0, upX, 0, upZ);
+  let camEye = { x: eyeX, y: eyeY, z: eyeZ };
   let camUp = { x: upX, y: 0, z: upZ };
+  let camLightDir = computeCameraLightDir(camEye, camUp);
 
   push();
+  camera(0, camDist, 0, 0, 0, 0, 0, 0, 1);
   noLights();
   let skyBrightness = lerp(SKYBOX_MIN_BRIGHTNESS * 255, 255, timeScale);
   tint(skyBrightness);
@@ -586,7 +722,7 @@ function draw() {
 
   push();
   noStroke();
-  drawReflectiveOrb(blackHoleSize, 0, 0, 0, camEye, [0, 0, 0], 1, 0);
+  drawReflectiveOrb(blackHoleSize, 0, 0, 0, camEye, camLightDir, [0, 0, 0], 1, 0);
   pop();
 
   let blackHoleProj = worldToScreen(0, 0, 0, camEye, camUp);
@@ -670,7 +806,7 @@ function draw() {
 	  pop();
 	}
 
-	drawReflectiveOrb(p.size, posX, posY, posZ, camEye, VISITED_TINT_COLORS[i], p.visitedMix);
+	drawReflectiveOrb(p.size, posX, posY, posZ, camEye, camLightDir, VISITED_TINT_COLORS[i], p.visitedMix);
 	pop();
 
 	let proj = worldToScreen(posX, posY, posZ, camEye, camUp);
@@ -806,12 +942,28 @@ function navigateBioLink(a) {
 function mousePressed(event) {
   if (bioOverlayOpen) return false;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
-  handleTap(mouseX, mouseY);
-  if (pendingOpenIndex !== -1) {
-	let p = projects[pendingOpenIndex];
-	openInNewTab(p.url);
-	markProjectVisited(p);
-	pendingOpenIndex = -1;
+  isDraggingCamera = true;
+  dragMoved = false;
+  dragStartX = mouseX;
+  dragStartY = mouseY;
+  camTiltXBase = camTiltX;
+  camTiltZBase = camTiltZ;
+  return false;
+}
+
+function mouseReleased(event) {
+  if (!isDraggingCamera) return false;
+  isDraggingCamera = false;
+  if (bioOverlayOpen) return false;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (!dragMoved) {
+	handleTap(mouseX, mouseY);
+	if (pendingOpenIndex !== -1) {
+	  let p = projects[pendingOpenIndex];
+	  openInNewTab(p.url);
+	  markProjectVisited(p);
+	  pendingOpenIndex = -1;
+	}
   }
   return false;
 }
@@ -820,18 +972,33 @@ function touchStarted(event) {
   if (bioOverlayOpen) return false;
   if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
   if (touches.length > 0) {
-	handleTap(touches[0].x, touches[0].y);
+	isDraggingCamera = true;
+	dragMoved = false;
+	dragStartX = touches[0].x;
+	dragStartY = touches[0].y;
+	lastTouchDragX = touches[0].x;
+	lastTouchDragY = touches[0].y;
+	camTiltXBase = camTiltX;
+	camTiltZBase = camTiltZ;
   }
   return false;
 }
 
-function touchEnded() {
-  if (bioOverlayOpen) return false;
-  if (pendingOpenIndex !== -1) {
-	let p = projects[pendingOpenIndex];
-	openInNewTab(p.url);
-	markProjectVisited(p);
-	pendingOpenIndex = -1;
+function touchEnded(event) {
+  if (bioOverlayOpen) { isDraggingCamera = false; return false; }
+  if (!isDraggingCamera) return false;
+  isDraggingCamera = false;
+  lastTouchDragX = null;
+  lastTouchDragY = null;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (!dragMoved) {
+	handleTap(dragStartX, dragStartY);
+	if (pendingOpenIndex !== -1) {
+	  let p = projects[pendingOpenIndex];
+	  openInNewTab(p.url);
+	  markProjectVisited(p);
+	  pendingOpenIndex = -1;
+	}
   }
   return false;
 }
