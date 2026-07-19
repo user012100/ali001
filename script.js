@@ -694,9 +694,9 @@ function computeCameraLightDir(eye, up) {
   let basis = computeCameraBasis(eye, up);
   let r = basis.right, u = basis.up, fwd = basis.forward;
 
-  let lx = -r.x * 0.5 + u.x * 0.7 + fwd.x * 0.5;
-  let ly = -r.y * 0.5 + u.y * 0.7 + fwd.y * 0.5;
-  let lz = -r.z * 0.5 + u.z * 0.7 + fwd.z * 0.5;
+  let lx = r.x * 0.5 + u.x * 0.7 + fwd.x * 0.5;
+  let ly = r.y * 0.5 + u.y * 0.7 + fwd.y * 0.5;
+  let lz = r.z * 0.5 + u.z * 0.7 + fwd.z * 0.5;
   let lLen = Math.sqrt(lx * lx + ly * ly + lz * lz);
   return { x: lx / lLen, y: ly / lLen, z: lz / lLen };
 }
