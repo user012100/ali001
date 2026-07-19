@@ -28,7 +28,7 @@ canvas {
   --reveal-radius: 0%;
   mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
-  transition: opacity 0.4s ease, --reveal-radius 0.8s ease;
+  transition: opacity 0.9s ease, --reveal-radius 1.6s ease;
   pointer-events: none;
 }
 

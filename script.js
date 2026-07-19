@@ -433,7 +433,7 @@ function fadeOutLoadOverlay() {
   if (!overlay) return;
   if (loadDotShown && !IS_TOUCH_DEVICE) {
 	if (dot) {
-	  dot.style.transitionDuration = '0.8s';
+	  dot.style.transitionDuration = '1.6s';
 	  dot.style.opacity = 0;
 	}
 	requestAnimationFrame(() => {
@@ -442,7 +442,7 @@ function fadeOutLoadOverlay() {
 	});
   } else {
 	if (dot) {
-	  dot.style.transitionDuration = '0.4s';
+	  dot.style.transitionDuration = '0.9s';
 	  dot.style.opacity = 0;
 	}
 	requestAnimationFrame(() => {
