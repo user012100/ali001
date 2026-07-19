@@ -72,8 +72,8 @@ const VISITED_MIX_EASE = 0.05;
 const HALO_SCALE = IS_TOUCH_DEVICE ? 1.2 : 1.15;
 const HALO_DEPTH_OFFSET_RATIO = 0.35;
 
-const BLACK_HOLE_SIZE = 14;
-const BLACK_HOLE_PULSE_AMPLITUDE = 2.5;
+const BLACK_HOLE_SIZE = 28;
+const BLACK_HOLE_PULSE_AMPLITUDE = 5;
 const BLACK_HOLE_PULSE_SPEED = 0.012;
 let blackHolePulsePhase = 0;
 
@@ -154,7 +154,7 @@ function sizeDotHitElement(dot) {
   dot.style.marginTop = (-diameter / 2) + 'px';
 }
 
-const LOAD_DOT_DELAY_MS = 500;
+const LOAD_DOT_DELAY_MS = 300;
 let loadDotShown = false;
 let loadDotTimer;
 if (IS_TOUCH_DEVICE) {
