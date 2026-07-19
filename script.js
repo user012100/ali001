@@ -33,18 +33,21 @@ const ORBIT_CONTENT_RADIUS = ORBIT_MAJOR_RADIUS + 90;
 
 let camYaw = Math.PI;
 const CAM_AUTO_ROTATE_SPEED = 0.0009;
+const CAMERA_YAW_DRAG_SENSITIVITY = 0.00025;
 
-const CAMERA_DRAG_YAW_SENSITIVITY = 0.0015;
 const CAMERA_DRAG_CLICK_THRESHOLD = 8;
-const CAMERA_YAW_VELOCITY_EASE = 0.15;
-const CAMERA_YAW_INERTIA_DAMPING = 0.04;
 let isDraggingCamera = false;
 let dragMoved = false;
 let dragStartX = 0;
 let dragStartY = 0;
 let lastTouchDragX = null;
 let lastTouchDragY = null;
-let camYawVelocity = 0;
+
+const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0022;
+const ORBIT_SPIN_VELOCITY_EASE = 0.15;
+const ORBIT_SPIN_INERTIA_DAMPING = 0.04;
+let orbitSpinAngle = 0;
+let orbitSpinVelocity = 0;
 
 const CAMERA_TILT_MAX_DEG = 25;
 const CAMERA_TILT_SENSITIVITY = 0.0011;
@@ -685,23 +688,22 @@ function updateCameraOrientation() {
 	}
   }
 
-  let yawDirection = (dragging && currentY < height / 2) ? -1 : 1;
-  let targetVelocity = dragging ? dragDeltaX * CAMERA_DRAG_YAW_SENSITIVITY * yawDirection : 0;
-  let ease = dragging ? CAMERA_YAW_VELOCITY_EASE : CAMERA_YAW_INERTIA_DAMPING;
-  camYawVelocity = lerp(camYawVelocity, targetVelocity, ease);
+  let spinDirection = (dragging && currentY < height / 2) ? -1 : 1;
+  let targetSpinVelocity = dragging ? dragDeltaX * ORBIT_SPIN_DRAG_SENSITIVITY * spinDirection : 0;
+  let spinEase = dragging ? ORBIT_SPIN_VELOCITY_EASE : ORBIT_SPIN_INERTIA_DAMPING;
+  orbitSpinVelocity = lerp(orbitSpinVelocity, targetSpinVelocity, spinEase);
+  orbitSpinAngle += orbitSpinVelocity;
 
-  camYaw += camYawVelocity;
-  if (!dragging) {
-	camYaw += CAM_AUTO_ROTATE_SPEED * timeScale;
+  camYaw += CAM_AUTO_ROTATE_SPEED * timeScale;
+  if (dragging) {
+	camYaw += dragDeltaX * CAMERA_YAW_DRAG_SENSITIVITY;
   }
 
   let maxTiltRad = CAMERA_TILT_MAX_DEG * (Math.PI / 180);
 
   let softClampTilt = (value) => maxTiltRad * Math.tanh(value / maxTiltRad);
   if (dragging) {
-	let totalDragX = currentX - dragStartX;
 	let totalDragY = currentY - dragStartY;
-	camTiltTargetZ = softClampTilt(camTiltZBase + totalDragX * CAMERA_TILT_SENSITIVITY);
 	camTiltTargetX = softClampTilt(camTiltXBase + totalDragY * CAMERA_TILT_SENSITIVITY);
 	let instantTiltVelocityX = dragDeltaY * CAMERA_TILT_SENSITIVITY;
 	camTiltVelocityX = lerp(camTiltVelocityX, instantTiltVelocityX, CAMERA_TILT_VELOCITY_EASE);
@@ -804,8 +806,8 @@ function draw() {
 	let major = majorRadius + (i - 3) * 6;
 	let minor = minorRadius + (i - 3) * 4;
 
-	let x = major * cos(p.orbitAngle);
-	let z = minor * sin(p.orbitAngle);
+	let x = major * cos(p.orbitAngle + orbitSpinAngle);
+	let z = minor * sin(p.orbitAngle + orbitSpinAngle);
 	let y = 0;
 
 	let y1 = y * cos(tiltX) - z * sin(tiltX);
