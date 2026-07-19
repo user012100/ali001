@@ -132,6 +132,12 @@ canvas {
   pointer-events: auto;
 }
 
+@media (width < 768px) {
+  #bio-overlay {
+    padding: 1rem;
+  }
+}
+
 .bio-overlay-content {
   max-width: 100%;
   height: 100%;
