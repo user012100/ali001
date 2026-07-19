@@ -94,7 +94,7 @@ const BIO_TOUCH_SENSITIVITY = 0.0022;
 const BIO_REVEAL_EASE = 0.12;
 const BIO_REVEAL_CLOSE_FAST_EASE = 0.5;
 const BIO_REVEAL_CLOSE_FAST_THRESHOLD = 0.67;
-const BIO_REVEAL_OPEN_SETTLE_EASE = 0.06;
+const BIO_REVEAL_OPEN_SETTLE_EASE = 0.03;
 const BIO_WHEEL_IDLE_MS = 350;
 let bioRevealTarget = 0;
 let bioRevealProgress = 0;
@@ -734,11 +734,38 @@ function findProjectHitIndex(px, py) {
   return hitIndex;
 }
 
+function computeProjectHoverZone(p) {
+  let hitRadius = computeHitRadius(p);
+  let left = p.screenX - hitRadius;
+  let top = p.screenY - hitRadius;
+  let right = p.screenX + hitRadius;
+  let bottom = p.screenY + hitRadius;
+
+  if (labelContentIndex !== -1 && projects[labelContentIndex] === p && orbLabelEl && orbLabelEl.style.opacity === '1') {
+	let labelRect = orbLabelEl.getBoundingClientRect();
+	left = Math.min(left, labelRect.left);
+	right = Math.max(right, labelRect.right);
+	bottom = Math.max(bottom, labelRect.bottom);
+  }
+
+  return { left, top, right, bottom };
+}
+
+function isMouseOverLabelZone() {
+  if (IS_TOUCH_DEVICE || labelContentIndex === -1) return false;
+  if (!orbLabelEl || orbLabelEl.style.opacity !== '1') return false;
+  let p = projects[labelContentIndex];
+  if (!p || !p.screenVisible) return false;
+
+  let zone = computeProjectHoverZone(p);
+  return mouseX >= zone.left && mouseX <= zone.right && mouseY >= zone.top && mouseY <= zone.bottom;
+}
+
 function isHoveringAnyProject() {
   if (IS_TOUCH_DEVICE) return false;
   if (bioOverlayOpen) return false;
 
-  return findProjectHitIndex(mouseX, mouseY) !== -1;
+  return findProjectHitIndex(mouseX, mouseY) !== -1 || isMouseOverLabelZone();
 }
 
 function updateDesktopHoverSelection() {
@@ -749,7 +776,11 @@ function updateDesktopHoverSelection() {
 	return;
   }
 
-  selectedIndex = findProjectHitIndex(mouseX, mouseY);
+  let hitIndex = findProjectHitIndex(mouseX, mouseY);
+  if (hitIndex === -1 && isMouseOverLabelZone()) {
+	hitIndex = labelContentIndex;
+  }
+  selectedIndex = hitIndex;
 }
 
 function updateCameraOrientation() {
@@ -1040,12 +1071,12 @@ function updateOrbLinkHitzone() {
 	return;
   }
 
-  let hitRadius = computeHitRadius(p);
+  let zone = computeProjectHoverZone(p);
   orbLinkEl.href = p.url;
-  orbLinkEl.style.left = `${p.screenX - hitRadius}px`;
-  orbLinkEl.style.top = `${p.screenY - hitRadius}px`;
-  orbLinkEl.style.width = `${hitRadius * 2}px`;
-  orbLinkEl.style.height = `${hitRadius * 2}px`;
+  orbLinkEl.style.left = `${zone.left}px`;
+  orbLinkEl.style.top = `${zone.top}px`;
+  orbLinkEl.style.width = `${zone.right - zone.left}px`;
+  orbLinkEl.style.height = `${zone.bottom - zone.top}px`;
   orbLinkEl.style.pointerEvents = 'auto';
 }
 
