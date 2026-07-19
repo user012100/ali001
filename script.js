@@ -326,6 +326,7 @@ function setup() {
 	a.addEventListener('touchend', (e) => {
 	  e.preventDefault();
 	  e.stopPropagation();
+	  flashBioLinkTap(a);
 	  navigateBioLink(a);
 	}, { passive: false });
   });
@@ -1104,6 +1105,13 @@ function openInNewTab(url) {
 function navigateBioLink(a) {
   let href = a.getAttribute('href');
   window.location.href = href;
+}
+
+const BIO_LINK_TAP_FLASH_MS = 300;
+
+function flashBioLinkTap(a) {
+  a.classList.add('bio-link-tap');
+  setTimeout(() => a.classList.remove('bio-link-tap'), BIO_LINK_TAP_FLASH_MS);
 }
 
 function beginCameraDrag(x, y) {

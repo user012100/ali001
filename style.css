@@ -176,6 +176,16 @@ canvas {
   color: #ffffff;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .bio-overlay-content a.bio-link-active {
+    color: #456A92;
+  }
+
+  .bio-overlay-content a.bio-link-active.bio-link-tap {
+    color: #ffffff;
+  }
+}
+
 #bio-close-dot {
   position: absolute;
   top: 50%;
