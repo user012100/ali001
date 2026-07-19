@@ -155,12 +155,19 @@ function sizeDotHitElement(dot) {
 }
 
 const LOAD_DOT_DELAY_MS = 300;
+const MOBILE_ZOOM_DELAY_MS = 300;
+const DESKTOP_REVEAL_TRANSITION_DURATION = '1.6s';
+const MOBILE_REVEAL_TRANSITION_DURATION = '2.4s';
 let loadDotShown = false;
+let loadTookLong = false;
 let loadDotTimer;
 if (IS_TOUCH_DEVICE) {
   let dot = document.getElementById('load-dot');
   if (dot) dot.classList.add('visible');
   loadDotShown = true;
+  loadDotTimer = setTimeout(() => {
+	loadTookLong = true;
+  }, MOBILE_ZOOM_DELAY_MS);
 } else {
   loadDotTimer = setTimeout(() => {
 	let dot = document.getElementById('load-dot');
@@ -432,10 +439,14 @@ function fadeOutLoadOverlay() {
   let overlay = document.getElementById('load-overlay');
   let dot = document.getElementById('load-dot');
   if (!overlay) return;
-  if (loadDotShown && !IS_TOUCH_DEVICE) {
+  let shouldZoomOut = IS_TOUCH_DEVICE ? loadTookLong : loadDotShown;
+  if (shouldZoomOut) {
 	if (dot) {
-	  dot.style.transitionDuration = '1.6s';
+	  dot.style.transitionDuration = IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION;
 	  dot.style.opacity = 0;
+	}
+	if (IS_TOUCH_DEVICE) {
+	  overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
 	}
 	requestAnimationFrame(() => {
 	  overlay.classList.add('revealed');
