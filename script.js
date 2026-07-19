@@ -46,11 +46,6 @@ let lastTouchDragX = null;
 let lastTouchDragY = null;
 let camYawVelocity = 0;
 
-// The other 2 rotation axes (pitch/roll-style tilt of the eye off the
-// straight-overhead position), driven by the TOTAL drag offset since the
-// drag started (not per-frame velocity), clamped to a small range so the
-// view never flips/goes too far. Tilt persists after the drag ends (no
-// spring-back to center) - each new drag continues from wherever it was left.
 const CAMERA_TILT_MAX_DEG = 25;
 const CAMERA_TILT_SENSITIVITY = 0.0011;
 const CAMERA_TILT_EASE = 0.18;
@@ -170,11 +165,6 @@ varying vec3 vWorldNormal;
 
 #define PI 3.14159265359
 
-// Warm "sun" key light used purely for a soft specular highlight/rim on the
-// mirror orbs (the env map reflection alone can look flat without it).
-// Direction is supplied camera-relatively (see uLightDir/computeCameraLightDir
-// in script.js) so the highlight stays anchored to the viewer's screen
-// instead of sweeping around the sphere as the camera is dragged.
 const vec3 LIGHT_COLOR = vec3(1.0, 0.93, 0.8);
 
 void main() {
@@ -500,10 +490,6 @@ function worldRadiusToScreenRadius(worldRadius, depth) {
   return (worldRadius / (depth * tanHalf)) * (height / 2);
 }
 
-// Computes a key-light direction expressed in camera space (-right + up +
-// toward-camera) so the specular highlight on the mirror orbs stays anchored
-// to the viewer's top-left regardless of camYaw/camTilt drag, rather than
-// sweeping around the sphere like a world-fixed light would.
 function computeCameraLightDir(eye, up) {
   let zLen = Math.sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z);
   let zx = eye.x / zLen, zy = eye.y / zLen, zz = eye.z / zLen;
@@ -622,9 +608,7 @@ function updateCameraOrientation() {
   }
 
   let maxTiltRad = CAMERA_TILT_MAX_DEG * (Math.PI / 180);
-  // Soft clamp: eases/slows down as it nears the limit instead of hitting a
-  // hard wall, via tanh saturation (behaves ~linearly near 0, flattens out
-  // and approaches, but never exceeds, +/-maxTiltRad).
+
   let softClampTilt = (value) => maxTiltRad * Math.tanh(value / maxTiltRad);
   if (dragging) {
 	let totalDragX = currentX - dragStartX;
@@ -634,14 +618,11 @@ function updateCameraOrientation() {
 	let instantTiltVelocityX = -dragDeltaY * CAMERA_TILT_SENSITIVITY;
 	camTiltVelocityX = lerp(camTiltVelocityX, instantTiltVelocityX, CAMERA_TILT_VELOCITY_EASE);
   } else {
-	// Let the up/down tilt keep gliding on its last velocity, decaying slowly,
-	// so a fast vertical drag carries momentum instead of stopping dead.
+
 	camTiltVelocityX = lerp(camTiltVelocityX, 0, CAMERA_TILT_INERTIA_DAMPING);
 	camTiltTargetX = softClampTilt(camTiltTargetX + camTiltVelocityX);
   }
-  // Always ease toward the current target, even after the drag ends, so the
-  // tilt keeps gliding/decelerating smoothly into place instead of freezing
-  // mid-motion the instant the drag stops.
+
   camTiltZ = lerp(camTiltZ, camTiltTargetZ, CAMERA_TILT_EASE);
   camTiltX = lerp(camTiltX, camTiltTargetX, CAMERA_TILT_EASE);
 }
