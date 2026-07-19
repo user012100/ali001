@@ -82,7 +82,7 @@ poemText.addEventListener('input', () => {
 		nextPlaceholder()
 
 		// fade in h2 and random poem (only if there is no saved poems)
-		if (localStorage.length === 0) {
+		if (getPoemKeys().length === 0) {
 			h2.classList.remove('hidden')
 			header.classList.remove('gradient')
 			header.style.position = ''
@@ -111,7 +111,7 @@ let closeModal = () => {
 	modal.addEventListener('transitionend', () => {
 		modal.classList.add('hidden')
 		modal.style.opacity = '0'
-		if (localStorage.length > 0) {
+		if (getPoemKeys().length > 0) {
 			poemSection.classList.remove('hidden')
 		}
 	}, { once: true })
@@ -154,13 +154,21 @@ modalDelete.addEventListener('click', () => {
 
 // following the example from https://github.com/typography-interaction-2526/forms-params-storage
 
+// [untold] shares localStorage with the rest of ali001.com (same origin), so other pages
+// (e.g. the main site's 'visitedProjectUrls' key) can write keys here too. Poem keys are
+// always numeric timestamps (see writePoem's Date.now()), so filter to just those to avoid
+// treating unrelated keys as poems (which crashed retrievePoems() and left the page blank).
+let getPoemKeys = () => {
+	return Object.keys(localStorage).filter((key) => /^\d+$/.test(key))
+}
+
 // function to retrieve poems from localstorage as an array
 let retrievePoems = () => {
 	// making an array with objects in it from localStorage
 	let poems = []
 
 	// using Object.keys() here instead of cycling through localStorage with a simple for loop (just thought this was a better way of doing it): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
-	Object.keys(localStorage).forEach((key) => {
+	getPoemKeys().forEach((key) => {
 		// pushing object to array: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/push
 
 		// parsing through localStorage object
@@ -201,7 +209,7 @@ let displayPoems = (clearInput) => {
 		document.getElementById('poem-text').style.height = '2rem'
 	}
 
-	if (localStorage.length === 0) {
+	if (getPoemKeys().length === 0) {
 		poemSection.classList.add('hidden')
 		h2.classList.remove('hidden')
 		header.classList.remove('gradient')
@@ -224,7 +232,7 @@ let displayPoems = (clearInput) => {
 		}
 	}
 
-	if (localStorage.length > 0) {
+	if (getPoemKeys().length > 0) {
 		poemSection.classList.remove('hidden')
 		h2.classList.add('hidden')
 		header.classList.add('gradient')
@@ -660,7 +668,7 @@ let displayRandomPoem = async () => {
 	document.body.appendChild(container)
 
 	// show or hide based on localStorage
-	if (localStorage.length == 0) {
+	if (getPoemKeys().length == 0) {
 		requestAnimationFrame(() => { 
 			container.style.opacity = '1' 
 		})
