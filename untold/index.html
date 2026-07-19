@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<title>[untold]</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta charset="utf-8">
+		<meta property="description" content="[untold] is a dedicated space for your creative writing, whether it's poetry, lyrics or anything in between. type something into the box at the bottom and press the arrow to save it. tap any piece to read, edit or delete it.">
+		<meta content="https://user012100.github.io/functions/assets/og-image.png" property="og:image">
+		<meta content="White background with text [untold] in Helvetica Neue" property="og:image:alt">
+		<link href="assets/favicon.ico" rel="icon" sizes="any">
+		<link href="assets/apple-touch-icon.png" rel="apple-touch-icon">
+		<link href="reset.css" rel="stylesheet">
+		<link href="style.css" rel="stylesheet">
+		<script defer src="script.js"></script>
+	</head>
+	<body>
+		<header>
+			<h1>[untold]</h1>
+			<button id="info"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></button>
+		</header>
+		<h2>a sacred space for your words</h2>
+		<section id="poems" class="hidden"></section>
+		<!-- container for random poems (to display all of them on bigger screens) -->
+		<!-- nvm i made it in js instead -->
+		<!-- <section id="random-poems-container" class="hidden">
+			<section class="random-poem"></section>
+			<section class="random-poem"></section>
+			<section class="random-poem"></section>
+			<section class="random-poem"></section>
+		</section> -->
+		<form id="poem-form">
+			<!-- <input id="poem-title" placeholder="Title..."></input> -->
+			<textarea id="poem-text"></textarea>
+			<!-- 
+				Write what you feel…
+				Write what you hear…
+				Write what you see…
+				Write what’s on your mind…
+				Write what lingers…
+				Write what won’t leave you alone…
+				Write what you can’t say out loud…
+				*i need a function that will cycle thru these and also animate the ellipsis for each one*
+			-->
+				<!-- svg from https://lucide.dev/ -->
+			<button id="submit" type="submit"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8L2 12L6 16"/><path d="M2 12H22"/></svg></button>
+		</form>
+		<section id="modal" class="hidden">
+			<section id="modal-text-container">
+				<textarea id="modal-text" placeholder="Not feeling it?"></textarea>
+			</section>
+			<section id="modal-buttons">
+				<button id="delete"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+				<button id="save"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg></button>
+			</section>
+		</section>
+		<section id="info-modal" class="hidden">
+			<button id="info-close"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+			<p>[untold] is a dedicated space for your creative writing, whether it's poetry, lyrics or anything in between.<br><br>type something into the box at the bottom and press the arrow to save it. tap any piece to read, edit or delete it.</p>
+		</section>
+	</body>
+</html>

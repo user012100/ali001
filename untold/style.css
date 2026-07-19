@@ -1,0 +1,453 @@
+/* variables */
+:root {
+	--background-color: #ffffff;
+	--text-color: #333333;
+	--second-color: #666666;
+	--highlight-color: #E93323;
+	--font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--padding: 1.5rem;
+	--text-size: 1.15rem;
+	--button-size: 2rem;
+	--button-padding: 0.75rem;
+	--line-height: 1.5;
+	--font-weight: 500;
+	/* https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/caret-color */
+	caret-color: var(--highlight-color);
+}
+
+/* headers */
+h1, h2 {
+	line-height: var(--line-height);
+	display: block;
+	/* text-transform: uppercase; */
+}
+
+h2 {
+	padding-inline: var(--padding);
+	padding-block: var(--padding);
+}
+
+header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-inline: var(--padding);
+	padding-block-start: var(--padding);
+	background-color: var(--background-color);
+	top: 0;
+}
+
+header.gradient::after {
+	content: '';
+	position: absolute;
+	bottom: -2.5rem;
+	left: 0;
+	right: 0;
+	height: 2.5rem;
+	background: linear-gradient(to bottom, var(--background-color), transparent);
+	pointer-events: none;
+}
+
+/* main text */
+h1, h2, p, textarea {
+	color: var(--text-color);
+	font-family: var(--font);
+	font-size: var(--text-size);
+	line-height: var(--line-height);
+	font-weight: var(--font-weight);
+}
+
+.poem-preview {
+	color: var(--highlight-color);
+	font-family: var(--font);
+	font-size: var(--text-size);
+	line-height: var(--line-height);
+	font-weight: var(--font-weight);
+	cursor: pointer;
+	overflow-wrap: break-word;
+	background: linear-gradient(to bottom, var(--highlight-color) 0%, transparent 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	color: transparent;
+}
+
+.poem-preview:hover {
+	color: var(--highlight-color);
+	background: linear-gradient(to bottom, var(--text-color) 0%, transparent 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	color: transparent;
+}
+
+.poem-preview.single-line {
+	background: none;
+	color: var(--highlight-color);
+	-webkit-text-fill-color: var(--highlight-color);
+}
+
+.poem-preview.single-line:hover {
+	background: none;
+	color: var(--text-color);
+	-webkit-text-fill-color: var(--text-color);
+}
+
+.poem-expanded {
+	color: var(--text-color);
+	font-family: var(--font);
+	font-size: var(--text-size);
+	line-height: var(--line-height);
+	font-weight: var(--font-weight);
+	resize: none;
+}
+
+#poems {
+	margin-block-end: calc(var(--padding) * 6);
+}
+
+body::selection {
+	background: var(--highlight-color);
+	color: var(--background-color);
+}
+
+/* hidden class */
+.hidden {
+	display: none;
+}
+
+/* page fade in on load */
+body {
+	opacity: 0;
+	transition: opacity 0.75s ease;
+}
+
+/* fade transitions */
+h2 {
+	opacity: 1;
+	transition: opacity 0.75s ease;
+}
+
+/* random poems container */
+#random-poems-container {
+	opacity: 0;
+	transition: opacity 0.75s ease;
+	margin-block-end: calc(var(--padding) * 6);
+}
+
+#random-poems-container.hidden {
+	display: none;
+}
+
+#random-poems-container .random-poem:not(:first-child) {
+	display: none;
+}
+
+/* new poem button */
+#poem-form {
+	position: fixed;
+	bottom: 0;
+	display: flex;
+	width: 100%;
+	z-index: 2;
+	align-items: flex-end;
+	padding: var(--padding);
+	background-color: var(--background-color);
+	padding-block-end: var(--button-size);
+}
+
+/* pseudo element for gradient effect */
+#poem-form::before {
+	content: '';
+	position: absolute;
+	top: -4rem;
+	left: 0;
+	right: 0;
+	height: 4rem;
+	background: linear-gradient(to bottom, transparent, var(--background-color));
+	pointer-events: none;
+}
+
+/* displayed poems */
+.poem input {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	text-wrap: break-word;
+}
+
+/* input in textarea */
+#poem-text {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	height: var(--button-size);
+	max-height: 90vh;
+	display: flex;
+	align-items: flex-end;
+	/* background-color: var(--background-color); */
+}
+
+textarea::placeholder {
+	color: var(--second-color);
+}
+
+#info {
+	flex: 0 0 auto;
+	padding: var(--button-padding);
+}
+
+#info svg {
+	transition: color 0.4s ease;
+	cursor: pointer;
+	color: var(--second-color);
+}
+
+#info:hover svg {
+	color: var(--highlight-color);
+}
+
+/* + button */
+#submit {
+	flex: 0 0 auto;
+	padding: var(--button-padding);
+	/* slight adjustment here to line everything up */
+	transform: translateY(0.25rem);
+}
+
+#submit svg {
+	transition: transform 0.4s ease, color 0.4s ease, opacity 0.6s ease;
+	cursor: pointer;
+	color: var(--second-color);
+}
+
+#submit.allow svg {
+	transform: rotate(90deg);
+	color: var(--highlight-color);
+}
+
+#submit.allow:hover svg {
+	color: var(--text-color);
+}
+
+/* poem sections */
+.poem {
+	padding-inline: var(--padding);
+	padding-block-start: var(--padding);
+	max-height: 40vh;
+	overflow: hidden;
+	opacity: 0;
+	transition: opacity 0.75s ease;
+}
+
+.random-poem {
+	padding-inline: var(--padding);
+	padding-block-start: var(--padding);
+	max-height: 65vh;
+	overflow: hidden;
+}
+
+section.random-poem {
+	background: linear-gradient(to bottom, var(--text-color) 40%, transparent 100%);
+	/* https://css-tricks.com/snippets/css/gradient-text/ */
+	/* using this to change the gradient of the random poem without having to do it in js */
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	color: transparent;
+}
+
+/* modal */
+#modal {
+	position: fixed;
+	background-color: var(--background-color);
+	display: flex;
+	flex-direction: column;
+	width: 100vw;
+	height: 90vh;
+	opacity: 0;
+	transition: opacity 0.4s ease;
+	z-index: 3;
+	inset: 0;
+	padding: var(--padding);
+}
+
+#modal-text-container {
+	position: relative;
+	flex: 1 1 auto;
+	width: 100%;
+	height: 100%;
+}
+
+#modal-text-container::before,
+#modal-text-container::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	height: var(--padding);
+	pointer-events: none;
+	z-index: 1;
+}
+
+#modal-text-container::before {
+	top: 0;
+	background: linear-gradient(to bottom, var(--background-color), transparent);
+}
+
+#modal-text-container::after {
+	bottom: 0;
+	background: linear-gradient(to top, var(--background-color), transparent);
+}
+
+#modal-text {
+	width: 100%;
+	height: 100%;
+	resize: none;
+	padding-block: var(--padding);
+}
+
+#modal-buttons {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	padding: var(--padding);
+	background-color: var(--background-color);
+}
+
+#modal-buttons button {
+	padding: var(--button-padding);
+	cursor: pointer;
+}
+
+#modal-buttons svg {
+	transition: transform 0.4s ease, color 0.4s ease;
+	width: var(--button-size);
+	color: var(--highlight-color);
+}
+
+#modal-buttons button:hover svg {
+	color: var(--text-color);
+}
+
+#modal.hidden {
+	display: none;
+}
+
+#info-modal {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	background-color: var(--background-color);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	opacity: 0;
+	transition: opacity 0.4s ease;
+	z-index: 4;
+	padding: var(--padding);
+}
+
+#info-modal.hidden {
+	display: none;
+}
+
+#info-close {
+	position: absolute;
+	top: var(--padding);
+	right: var(--padding);
+	padding: var(--button-padding);
+}
+
+#info-close svg {
+	transition: color 0.4s ease;
+	cursor: pointer;
+	color: var(--highlight-color);
+}
+
+#info-close:hover svg {
+	color: var(--text-color);
+}
+
+#info-modal p {
+	max-width: 48ch;
+	/* text-align: center; */
+	color: var(--text-color);
+}
+
+#poems.hidden {
+	display: none;
+}
+
+/* desktop layouts */
+@media (width > 800px) {
+	#poems {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	.poem {
+		width: 50%;
+	}
+
+	#random-poems-container {
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	#random-poems-container .random-poem {
+		width: 50%;
+		max-width: 60ch;
+	}
+
+	/* showing 2 poems at 800px */
+	#random-poems-container .random-poem:nth-child(1),
+	#random-poems-container .random-poem:nth-child(2) {
+		display: block;
+	}
+}
+
+@media (width > 1200px) {
+	.poem {
+		width: 33%;
+	}
+
+	#random-poems-container .random-poem {
+		width: 33%;
+	}
+
+	/* show 3 poems at 1200px */
+	#random-poems-container .random-poem:nth-child(1),
+	#random-poems-container .random-poem:nth-child(2),
+	#random-poems-container .random-poem:nth-child(3) {
+		display: block;
+	}
+}
+
+@media (width > 1600px) {
+	.poem {
+		width: 25%;
+	}
+
+	#random-poems-container .random-poem {
+		width: 25%;
+	}
+
+	/* show all 4 poems at 1600px */
+	#random-poems-container .random-poem:nth-child(1),
+	#random-poems-container .random-poem:nth-child(2),
+	#random-poems-container .random-poem:nth-child(3),
+	#random-poems-container .random-poem:nth-child(4) {
+		display: block;
+	}
+}
+
+@media (width > 2000px) {
+	.poem {
+		width: 20%;
+	}
+}

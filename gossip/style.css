@@ -1,0 +1,555 @@
+/* importing google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Syne:wght@400..800&display=swap');
+
+html {
+	scroll-behavior: smooth;
+}
+
+/* header styles */
+header {
+	padding: 1rem;
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	margin-block-start: -2rem;
+	max-width: 30rem;
+	display: flex;
+	justify-content: center;
+}
+
+/* logo and nav bar shadow, found this on MDN: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Values/filter-function/drop-shadow */
+header img {
+	filter: drop-shadow(0 0.25rem 0.25rem rgba(0, 0, 0, 0.25));
+}
+
+/* navigation styles */
+header nav {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 2;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem;
+}
+
+/* container for the 4 filter buttons */
+header nav .nav-filter-option {
+	position: relative;
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	/* stopping the buttons from shrinking and wrapping, from MDN: https://developer.mozilla.org/en-US/en-US/docs/Web/CSS/flex */
+	flex: 0 1 auto;
+	width: 10rem;
+}
+
+/* the select button/svg icon */
+header nav .nav-select {
+	position: relative;
+	height: auto;
+	pointer-events: none;
+	z-index: 2;
+}
+
+/* general navigation item styles */
+header nav button  {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-transform: uppercase;
+	/* from MDN: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/flex
+	using flex: 1 to fill the flex container elements evenly inside the container */
+	flex: 1;
+	cursor: pointer;
+}
+
+/* navigation item svg styles */
+header button img {
+	width: 100%;
+	height: auto;
+	display: block;
+}
+
+/* navigation item text styles */
+header button p {
+	position: absolute;
+	font-family: "Bricolage Grotesque", sans-serif;
+	/* using clamp here to keep the text within the svg buttons */
+	font-size: clamp(0.7rem, 3vw, 1.25rem);
+	font-weight: 700;
+	color: #111111;
+	z-index: 4;
+}
+
+/* omg button text styles */
+#omg-button p {
+	font-style: italic;
+}
+
+/* media query for smaller screens to change the logo size */
+@media (width < 1401px) {
+	header > a img {
+		max-width: 100%;
+		/* specifying max-width as one of the transitioning properties to make it smooth */
+		transition: max-width 0.25s ease;
+	}
+	/* targeting the logo to always center it */
+	header > a {
+		display: flex;
+		justify-content: center;
+	}
+	/* targeting the header when it is scrolled */
+	header.scrolled {
+		display: flex;
+		justify-content: center;
+	}
+	/* targeting the logo when it is scrolled, making it smaller */
+	header.scrolled > a img {
+		max-width: 15rem;
+	}
+	
+}
+
+/* media query for larger screens to change the nav position */
+@media (width > 1400px) {
+	header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	/* making sure the logo is not stretched */
+	header > a {
+		flex: 0 0 auto;
+	}
+
+	/* also locking the logo to a max width */
+	header > a img {
+		display: block;
+		max-width: 28rem;
+	}
+
+	/* navigation styles */
+	header nav {
+		position: relative;
+		display: flex;
+		gap: 1.5rem;
+		padding: 0;
+		flex: 1 1 auto;
+		justify-content: flex-start;
+		margin-inline-start: 1.5rem;
+	}
+
+	/* navigation item styles */
+	header nav button {
+		/* stopping the buttons from shrinking and wrapping */
+		flex: 0 1 auto;
+		width: auto;
+		width: 10rem;
+	}
+
+	/* navigation item svg styles */
+	header nav button img {
+		width: 100%;
+		height: auto;
+	}
+
+	/* navigation item text styles */
+	header nav button p {
+		font-size: 1.25rem;
+	}
+}
+
+/* query for titles to be not centered on bigger screens, adding this retroactively cuz i forgot to do it in the first place */
+@media (width > 480px) {
+	header {
+		justify-content: flex-start;
+	}
+
+	header > a {
+		justify-content: flex-start;
+	}
+
+	/* keep scrolled state from re-centering it */
+	header.scrolled {
+		justify-content: flex-start;
+	}
+}
+
+/* body styles */
+body {
+	background-color: #EB5B95;
+}
+
+/* channel blocks styles */
+#channel-blocks {
+	/* grid layout */
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: var(--spacing);
+
+	/* media query for larger screens, changing the grid template columns */
+	@media (width > 640px) {
+		grid-template-columns: repeat(3, 1fr);
+	}
+
+	/* media queries for even larger screens */
+	@media (width > 960px) {
+		grid-template-columns: repeat(4, 1fr);
+	}
+
+	@media (width > 1440px) {
+		grid-template-columns: repeat(5, 1fr);
+	}
+
+	@media (width > 1920px) {
+		grid-template-columns: repeat(6, 1fr);
+	}
+
+	/* grid item styles */
+	li {
+		aspect-ratio: 1 / 1;
+		overflow: hidden;
+		background-color: #3c9b27;
+		border: 0.1rem solid #3c9b27;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	button {
+		cursor: pointer;
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	/* image block thumbnail styles */
+	li:has(.image-button) {
+		button, img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	
+		.image-thumbnail {
+			transform: scale(1.25);
+		}	
+	}
+
+	/* text and audio block thumbnail styles */
+	.audio-button, .text-button {
+		img {
+			width: 40vw;
+			height: 40vh;
+			filter: drop-shadow(0 0.25rem 0.25rem rgba(0, 0, 0, 0.25));
+		}
+	}
+
+	.video-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* video block thumbnail styles */
+	.video-thumbnail {
+		transform: scale(1.85);
+	}
+
+	/* video block play button styles */
+	img.play-button {
+		position: absolute;
+		max-width: 25%;
+		max-height: 25%;
+		z-index: 1;
+		filter: drop-shadow(0 0.25rem 0.25rem rgba(0, 0, 0, 0.25));
+	} 
+}
+
+/* title and description styles */
+h1 {
+	font-family: "Syne", sans-serif;
+	font-size: 2rem;
+	font-weight: 800;
+	color: #111111;
+	padding-block: 1.5rem;
+}
+
+#description, footer {
+	position: relative;
+	z-index: 1;
+	padding: 1rem;
+	font-family: "Bricolage Grotesque", sans-serif;
+	font-size: 1.1rem;
+	font-weight: 400;
+	color: #111111;
+	line-height: 1.5;
+}
+
+/* footer styles */
+footer {
+	padding: 1rem;
+	margin-block-end: 4rem;
+	font-family: "Bricolage Grotesque", sans-serif;
+	font-size: 1.1rem;
+	font-weight: 400;
+	color: #111111;
+	line-height: 1.5;
+	
+	a {
+		color: #111111;
+		text-decoration: underline;
+	}
+}
+
+#footer-content {
+	position: relative;
+}
+
+#background-button-container {
+	position: absolute;
+	display: flex;
+	/* for some reason the container clips the background graphic so im using top, right, bottom and left here instead of margin-block and margin-inline */
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	pointer-events: none;
+	overflow-x: hidden;
+	overflow-y: visible;
+	pointer-events: none;
+	z-index: 0;
+	height: 24rem;
+}
+
+#background-button {
+	position: absolute;
+	margin-block-start: 9rem;
+	transform: scale(3.95);
+	z-index: 0;
+	filter: drop-shadow(0 0rem 0.1rem rgba(0, 0, 0, 0.33));
+}
+
+@media (width > 640px) {
+	#description, footer {
+		padding: 2rem;
+		max-width: 27ch;
+		margin-inline-start: auto;
+	}
+
+	#background-button-container {
+		justify-content: right;
+	}
+
+	#background-button {
+		margin-block-start: 10rem;
+	}
+
+	footer {
+		margin-block-end: 4rem;
+	}
+}
+
+@media (width > 1400px) {
+	footer {
+		margin-block-end: 1rem;
+	}
+}
+
+/* dialog styles, from eric's example */
+dialog[open] {
+	position: fixed;
+	background-color: #EB5B9500;
+	border: none;
+	/* preventing selection in dialogs, found this on MDN: https://developer.mozilla.org/en-US/docs/Web/CSS/user-select */
+	-webkit-user-select: none;
+	user-select: none;
+
+	.dialog-container {
+		max-height: 100vh;
+		max-width: 100vw;
+	}
+
+	img.thumbnail, iframe, audio {
+		border: 0.125rem solid #3c9b27;
+	}
+
+	/* image block styles */
+	img, iframe {
+		max-width: 75vw;
+		max-height: 75vh;
+		object-fit: contain;
+	}
+	
+	/* dialog buttons styles */
+	.dialog-buttons {
+		margin-block-start: 1rem;
+		display: flex;
+		justify-content: space-between;
+	}
+
+	/* dialog buttons text styles */
+	.dialog-buttons p {
+		position: absolute;
+		font-family: "Syne", sans-serif;
+		font-size: 1rem;
+		font-weight: 800;
+		color: #111111;
+	}
+
+	/* individual button styles */
+	.dialog-buttons button {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: 1;
+		max-width: 8rem;
+	}
+
+	.dialog-buttons button img {
+		max-width: 7rem;
+	}
+
+	.text-content {
+		background-color: #EB5B95;
+		padding: 2rem;
+		border: 0.125rem solid #3c9b27;
+		text-align: center;
+		font-family: "Bricolage Grotesque", sans-serif;
+		font-size: 1.3rem;
+		font-weight: 400;
+		color: #111111;
+		line-height: 1.5;
+		min-width: 17rem;
+		max-width: 50ch;
+	}
+
+	/* link image wrapper */
+	.dialog-middle-button-container > a {
+		position: relative;
+		display: inline-block;
+	}
+
+	/* keep image as base layer */
+	.dialog-middle-button-container > a > .thumbnail {
+		display: block;
+	}
+
+	/* center overlay in the image/content area */
+	.dialog-middle-button-container > a > .dialog-middle-button {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		width: fit-content;
+		height: fit-content;
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	.dialog-middle-button {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.dialog-middle-button p {
+		position: absolute;
+		margin: auto;
+		width: fit-content;
+		height: fit-content;
+		text-align: center;
+		font-family: "Bricolage Grotesque", sans-serif;
+		font-size: 1.3rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: #111111;
+	}
+	
+	.dialog-middle-button img {
+		max-width: 8rem;
+		width: 100%;
+		height: auto;
+	}
+}
+
+/* backdrop overlay */
+::backdrop {
+	background-color: rgba(0, 0, 0, 0.85);
+	cursor: pointer;
+}
+
+/* prevent body scrolling when dialog is open */
+body:has(dialog[open]) {
+	overflow: hidden;
+}
+
+/* thumbnail animations */
+@keyframes wobble {
+	from { transform: rotate(-6deg); }
+	to { transform: rotate(6deg); }
+}
+
+@keyframes wobbleAlternate {
+	from { transform: rotate(6deg); }
+	to { transform: rotate(-6deg); }
+}
+
+.text-button img {
+	animation: wobble 2s ease-in-out infinite alternate-reverse;
+}
+
+.audio-button img {
+	animation: wobbleAlternate 2s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes hoverWobble {
+	0%   { transform: rotate(0deg); }
+	25%  { transform: rotate(3deg); }
+	75%  { transform: rotate(-3deg); }
+	100% { transform: rotate(0deg); }
+}
+
+#title-logo:hover, .play-button:hover, .dialog-close:hover, .dialog-share:hover, .dialog-middle-button, #omg-button {
+	animation: hoverWobble 0.75s linear infinite;
+}
+
+nav section:not(:has(> #omg-button)):hover {
+	animation: hoverWobble 0.75s linear infinite;
+}
+
+@keyframes modalAnimation {
+	from {
+		transform: scale(0);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+dialog[open] {
+	transform-origin: center;
+	animation: modalAnimation 220ms ease-out;
+}
+
+@keyframes modalBackdropFade {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+::backdrop {
+	animation: modalBackdropFade 220ms ease-out;
+}

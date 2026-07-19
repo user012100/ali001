@@ -1,0 +1,459 @@
+/* base styles */
+:root {
+	background-color: #BEBEBE;
+	font-family: Helvetica, sans-serif;
+	font-size: 120%;
+	p {
+	 margin-top: 1rem;
+     margin-bottom: 1rem;
+	}
+}
+
+p {
+	line-height: 145%;
+	letter-spacing: -0.03rem;
+}
+
+/* line style */
+.line {
+	height: 100vh;
+	width: 0.3em;
+	position: fixed;
+	background-color: #F46738;
+
+	top: 0;
+	margin-inline-start: 5vw;
+	z-index: 4;
+}
+
+/* header styles */
+header {
+	margin-block-start: 15vh;
+
+	/* summer 1993 */
+	p:nth-child(1) {
+		font-weight: 700;
+		text-transform: uppercase;
+		position: absolute;
+
+		margin-block-start: -1.35rem;
+		margin-inline-start: 7vw;
+	}
+
+	/* main title "cult of the ugly" */
+	h1 {
+		color: #BEBEBE;
+		font-size: 6rem;
+		font-weight: 700;
+		letter-spacing: -0.64rem;
+		line-height: 4.3rem;
+		background-color: #4800C0;
+
+		margin-block-start: 4rem;
+		margin-inline-start: 5vw;
+		max-width: 90vw;
+
+		/* cinching the box */
+		display: flow-root;
+		inline-size: fit-content;
+
+		&::before, &::after {
+			content: ''; /* Gives us “empty” pseudos to work with. */
+			display: block;
+			visibility: hidden; /* We don’t need to see it or click it. */
+		}
+
+		&::before { margin-block-start: -0.04em; }
+		&::after { margin-block-end: -0.03em; }
+	}
+
+	/* steven heller link */
+	a {
+		text-transform: uppercase;
+		position: absolute;
+		right: 0;
+
+		padding-inline-start: 0.2em;
+		padding-inline-end: 0.2em;
+
+		margin-block-start: -1rem;
+		margin-inline-end: 3.5vw;
+	}
+}
+
+/* links style */
+a {
+	padding-inline-start: 0.2em;
+	padding-inline-end: 0.2em;
+	background-color: #B9FF00;
+	font-weight: 700;
+}
+
+a:hover {
+	background-color: #FF0000;
+	color: #FFFFFF;
+}
+
+/* italics */
+em {
+	font-style: italic;
+}
+
+/* intro paragraph style */
+.intro p {
+	font-size: 2rem;
+	font-weight: 700;
+	letter-spacing: -0.07rem;
+	line-height: 103%;
+
+	margin-block-start: 5rem;
+	margin-block-end: 5rem;
+	padding-inline-start: 10vw;
+	padding-inline-end: 7.5vw;
+}
+
+/* subheadings style */
+h2 {
+	color: #BEBEBE;
+	font-size: 5rem;
+	font-weight: 700;
+	letter-spacing: -0.49rem;
+	text-transform: lowercase;
+	background-color: #4800C0;
+
+	margin-inline-start: 5vw;
+	margin-inline-end: 5vw;
+	margin-block-start: 4rem;
+	margin-block-end: 3rem;
+
+	display: flow-root;
+	inline-size: fit-content;
+	width: 90vw;
+
+	/* cinching the box */
+	&::before,
+	&::after {
+		content: ''; /* Gives us “empty” pseudos to work with. */
+		display: block;
+		visibility: hidden; /* We don’t need to see it or click it. */
+	}
+
+	&::before { margin-block-start: -0.26em; }
+	&::after { margin-block-end: -0.25em; }
+}
+
+/* body text style */
+section p {
+	margin-block-start: 5vw;
+	margin-block-end: 5vw;
+	padding-inline-start: 10vw;
+	padding-inline-end: 9vw;
+	line-height: 150%;
+	margin-block-end: 2rem;
+}
+
+/* quote style */
+blockquote {
+	background-color: #F90AF5;
+	font-style: italic;
+	font-weight: 500;
+	font-size: 125%;
+	font-weight: 700;
+	margin-block-start: 3rem;
+	margin-block-end: 3rem;
+	margin-inline-start: 5vw;
+	padding-inline-start: 9vw;
+	max-width: 90vw;
+	z-index: 0;
+	position: relative;
+	display: flow-root;
+	/* Michael was stumped by this: wouldn’t collapse negative margin with grid parent */
+
+	/* quote text style */
+	p {
+		margin-inline-start: -1rem;
+		margin-block-start: 2rem;
+		line-height: 130%;
+		position: relative;
+		z-index: 2;
+	}
+
+	a {
+		padding-inline-start: 0.1em;
+	}
+
+	p:first-child {
+		margin-block-start: -0.8rem;
+		margin-block-end: -0.25rem;
+	}
+
+	p:last-child {
+		margin-block-end: -0.8rem;
+	}
+
+	/* quotation marks style */
+	&::before {
+		content: '“';
+		position: absolute;
+		top: -2rem;
+		left: -0.36rem;
+		font-style: normal;
+		font-size: 10rem;
+		color: #BEBEBE;
+		z-index: 1;
+	}
+
+	&::after {
+		content: '”';
+		position: absolute;
+		bottom: -7rem;
+		right: -0.59rem;
+		font-style: normal;
+		font-size: 10rem;
+		color: #BEBEBE;
+		z-index: 1;
+	}
+}
+
+/* author label style */
+.author {
+	font-size: 90%;
+	color: #F90AF5;
+	font-weight: 700;
+	margin-block-start: -3rem;
+	margin-block-end: 2rem;
+	margin-top: 0.3rem;
+
+	p {
+		letter-spacing: -0.01em;
+	}
+
+	p:nth-child(1) {
+		margin-block-end: -1rem;
+	}
+
+}
+
+.author p + p {
+  margin-top: 1rem;
+}
+
+/* footer style */
+footer {
+	z-index: 5;
+	background-color: #BEBEBE;
+	position: relative;
+
+	/* little section about the author and publication */
+	.about {
+		color: black;
+		font-weight: 600;
+		margin-block-start: 7rem;
+		margin-block-end: 7rem;
+		margin-inline-start: 5vw;
+		margin-inline-end: 1rem;
+		background-color: #F46738;
+		display: grid;
+		max-width: 90vw;
+
+		p {
+			margin-block-start: -0.5rem;
+			padding-inline-start: 5vw;
+			padding-inline-end: 1rem;
+			font-size: 85%;
+			line-height: 120%;
+		}
+
+		p:nth-child(3) {
+			margin-block-end: -0.5rem;
+		}
+	}
+
+	/* us :) */
+	.credits {
+		margin-block-start: 4rem;
+		font-weight: 700;
+		display: flex;
+		background-color: #4800C0;
+		z-index: 9999;
+		justify-content: space-between;
+		text-wrap: nowrap;
+
+		p {
+			margin-block-start: -1.35rem;
+			margin-block-end: 3.5rem;
+			font-size: 85%;
+		}
+	}
+}
+
+/* bigger layout media query */
+@media (width > 785px) {
+	/* changing header style */
+	header {
+		max-width: 60vw;
+		margin-inline-start: 5vw;
+
+		/* adjusting steven heller spacing */
+		a {
+			margin-inline-end: 7.5vw;
+		}
+
+		/* h1 style adjustments */
+		h1 {
+			font-size: 10rem;  /* increase size */
+			line-height: 7.2rem; /* adjust spacing so it doesn’t overlap */
+			width: 100vw;
+			letter-spacing: -0.104em;
+
+			margin-block-start: 15vh;
+
+			/* cinching the box */
+			&::before { margin-block-start: -0.04em; }
+			&::after { margin-block-end: -0.02em; }
+		}
+	}
+
+	/* changing intro style */
+	.intro {
+		margin-inline-start: -2.5vw;
+		margin-block-start: 15vh;
+		margin-block-end: 17vh;
+		p {
+			font-size: 250%;
+		}
+	}
+
+	/* changing line style */
+	.line {
+		max-width: 80vw;
+		margin-inline-start: 10vw;
+	}	
+
+	/* changing subheadings style */
+	h2 {
+		margin-block-start: 12vh;
+		max-width: 80vw;
+		padding-inline-start: 5vw;
+		margin-inline-start: 10vw;
+	}
+
+	/* changing quote style */
+	blockquote {
+		margin-inline-start: 10vw;
+		margin-block-start: 10vh;
+		margin-block-end: 10vh;
+		max-width: 80vw;
+
+		p {
+			margin-inline-start: -1rem;
+			max-width: 70ch;
+		}
+	}
+
+	/* targetting body text except for blockquotes p's */
+	section p:not(blockquote p) {
+		margin-inline-start: 10vw;
+		max-width: 85vw;
+		line-height: 160%;
+	}
+
+	footer .about {
+		margin-inline-start: 10vw;
+
+		p {
+			margin-inline-start: 5vw;
+			max-width: 120ch;
+		}
+	}
+
+	.credits p {
+		margin-inline-end: 1vw;
+	}
+}
+
+/* print layout */
+@media print {
+	:root {
+		background-color: #FFFFFF;
+		font-size: 100%;
+	}
+
+	header {
+		margin-block-start: -2rem;
+
+		h1 {
+			color: #FFFFFF;
+			background-color: #484848;
+			font-size: 7rem;
+			letter-spacing: -0.8rem;
+
+			&::before { margin-block-start: 0.03em; }
+			&::after { margin-block-end: 0.02em; }
+
+		}
+
+		a {
+			margin-block-start: -1rem;
+			background-color: #a2a2a2;
+		}
+	}
+
+	.line {
+		background-color: #A7A7A7;
+	}
+
+	h2 {
+		color: #FFFFFF;
+		background-color: #484848;
+		max-width: 10ch;
+	}
+
+	/* more tiny adjustments for these specific elements */
+	.h2-print {
+		break-before: page;
+	}
+
+	.a-print {
+		font-weight: 500;
+	}
+
+	blockquote {
+		background-color: #d3d3d3;
+		position: relative;
+		display: flow-root;
+
+		&::before, &::after {
+			color: #FFFFFF;
+		}
+
+		p {
+			max-width: 55ch;
+		}
+	}
+
+	a {
+		background-color: #a2a2a200;
+	}
+
+	.author {
+		color: #000000;
+	}
+
+	footer {
+		margin-block-start: -2rem;
+		background-color: #FFFFFF;
+		position: relative;
+
+		.about {
+			background-color: #c5c5c5;
+			max-width: 70ch;
+		}
+
+		.credits {
+			/* trying to hide the line at the end of the print layout */
+			background-color: #FFFFFF;
+			height: 11.75rem;
+		}
+	}
+}

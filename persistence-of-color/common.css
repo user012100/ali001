@@ -1,0 +1,483 @@
+/* ~~ base styles ~~ */
+/* importing font from google fonts */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap');
+
+:root {
+	/* css custom properties */
+	--white: #E4E3E6;
+	--gray: #181818;
+	--black: #121111;
+	--red: #C01809;
+	--orange: #d03913;
+	--pink: #d0396b;
+	--blue: #4e5db3;
+	--stroke-width: 0.1rem;
+
+	/* base font */
+	font-size: 115%;
+	font-family: "Geist";
+	font-weight: 400;
+
+	background-color: var(--red);
+}
+
+html {
+	/* smooth scrolling for links, from mdn: https://developer.mozilla.org/docs/Web/CSS/scroll-behavior */
+	scroll-behavior: smooth;
+}
+
+/* ~~ general layout and tweaks for breakpoints ~~ */
+body {
+	display: grid;
+	grid-template-columns: 100vw;
+
+	/* mobile layout only */
+	@media (width < 667px) {
+		grid-template-areas:
+		"figure"
+		"header"
+		"navigation"
+		"main";
+
+		#introduction, #interaction-of-color, #everyday-color-theory {
+			scroll-margin-top: 3.5rem;
+		}
+
+		#homage {
+			scroll-margin-top: 5.5rem;
+		}
+	}
+
+	/* put the header at the top for this breakpoint */
+	@media (width > 639px) {
+		grid-template-areas:
+		"header"
+		"figure"
+		"navigation"
+		"main";
+	}
+
+	/* tablet layout only */
+	@media (width >= 640px) and (width < 1024px) {
+		margin-block-start: 5vh;
+
+		h1 {
+			padding: 0rem;
+		}
+
+		#introduction, #interaction-of-color, #everyday-color-theory {
+			scroll-margin-top: 4.75rem;
+		}
+
+		#homage {
+			scroll-margin-top: 10rem;
+		}
+
+		article p, article ul, footer p, h2, h3 {
+			padding-inline: 0.7rem;
+			max-width: 65ch;
+		}
+	}
+
+	/* mobile + tablet layout */
+	@media (width < 1024px) {
+		figure {
+			margin-block-start: 2.25rem;
+			margin-block-end: 3.75rem;
+		}
+
+		nav a{
+			padding-inline-end: 5vw;
+		}
+
+		.next-button {
+			padding-inline-end: 5vw;
+		}
+
+		article, footer {
+			padding: 1.25rem;
+		}
+
+		h1 {
+			text-align: center;
+		}
+
+		ol:nth-child(1) {
+			border-top: var(--stroke-width) solid var(--white);
+		}
+
+		header {
+			position: sticky;
+			top: 0;
+			background-color: var(--red);
+			z-index: 10;
+		}
+	}
+
+	/* desktop layout */
+	@media (width >= 1024px) {
+		display: block;
+
+		figure, header {
+			position: fixed;
+			left: 0;
+			min-width: 44vw;
+			width: 44vw;
+		}
+
+		figure {
+			margin-block: 1rem;
+			bottom: 0;
+			z-index: 0;
+		}
+
+		nav, main {
+			margin-left: 44vw;
+			z-index: 1;
+			column-gap: 2rem;
+		}
+
+		nav a, .next-button {
+			padding-inline-end: 2.5vw;
+		}
+
+		nav a:hover svg, .next-button:hover svg {
+			opacity: 100;
+		}
+
+		nav a:hover svg line, .next-button:hover svg line {
+			stroke-dashoffset: 0;
+		}
+
+		svg {
+			opacity: 0;
+
+			line {
+				stroke-dasharray: 20;
+				stroke-dashoffset: 20;
+				transition: stroke-dashoffset 0.25s ease-in-out;
+			}
+		}
+
+		article, footer {
+			padding: 2.5rem;
+		}
+
+		h1 {
+			margin-block: 0.05rem;
+			line-height: 4.67rem;
+			hyphens: auto;
+			padding-inline: 1rem;
+			text-align: start;
+		}
+
+		p, ul {
+			max-width: 60ch;
+		}
+
+		h1 span {
+			overflow: auto;
+		}
+
+		#colophon, footer {
+			border-left: var(--stroke-width) solid var(--white);
+		}
+	}
+
+	/* larger desktop layout */
+	@media (width >= 1550px) {
+		nav,
+		main {
+			max-width: 48rem;
+			margin-left: 44vw;
+			margin-right: auto;
+		}
+
+		#colophon {
+			border-right: var(--stroke-width) solid var(--white);
+		}
+
+		footer {
+			border-right: var(--stroke-width) solid var(--white);
+		}
+
+	}
+
+	/* extremely large layout just in case */
+	@media (width > 2250px) {
+		h1 {
+			text-align: center;
+			margin-block-start: 5vh;
+		}
+	}
+}
+
+/* ~~ cover ~~ */
+figure {
+	grid-area: figure;
+	aspect-ratio: 1 / 1;
+	display: flex;
+
+	background-color: var(--red);
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+/* image + caption container */
+.cover {
+	max-width: 75%;
+	max-height: 75%;
+	display: flex;
+	flex-direction: column;
+	gap: 1.5vh;
+}
+
+figcaption {
+	color: var(--white);
+	font-style: italic;
+	font-weight: 300;
+	/* need to fix this */
+	font-size: 0.85rem;
+	line-height: 0.7lh;
+}
+
+/* ~~ title ~~ */
+header {
+	grid-area: header;
+}
+
+h1 {
+	color: var(--white);
+	font-weight: 700;
+	text-transform: uppercase;
+	font-size: clamp(1.25rem, 7vw, 4.3rem);
+	padding: 0.75rem;
+}
+
+h1:hover {
+	color: var(--gray);
+}
+
+/* ~~ navigation ~~ */
+nav a {
+	display: grid;
+	grid-template-columns: 3rem auto 1.5rem;
+	padding-block: 1rem;
+	column-gap: 5vw;
+
+	grid-template-areas:
+		"index title graphic";
+
+	font-size: clamp(1rem, 6vw, 2rem);
+
+	background-color: var(--white);
+	color: var(--red);
+}
+
+/* invert color on hover */
+nav a:hover {
+	background-color: var(--red);
+	color: var(--white);
+}
+
+nav a#active-link, nav a#active-link-home {
+	background-color: var(--red);
+	color: var(--white);
+}
+
+/* buttons style */
+nav.top-nav li {
+	border-bottom: var(--stroke-width) solid var(--red);
+}
+
+nav.bottom-nav li {
+	border-top: var(--stroke-width) solid var(--red);
+}
+
+/* index roman numerals */
+p.index {
+	grid-area: index;
+	justify-self: center;
+	font-weight: 600;
+	padding-inline-start: 5vw;
+}
+
+/* nav item title text */
+p.title {
+	grid-area: title;
+	font-weight: 600;
+}
+
+.next-button {
+	display: grid;
+	grid-template-columns: 3rem auto 1.5rem;
+	padding-block: 1rem;
+	column-gap: 5vw;
+
+	grid-template-areas:
+		"index title graphic";
+
+	font-size: clamp(1rem, 6vw, 2rem);
+	text-decoration: none;
+	font-style: normal;
+
+	background-color: var(--white);
+	color: var(--red);
+	border-top: var(--stroke-width) solid var(--red);
+}
+
+.next-button:hover {
+	background-color: var(--red);
+	color: var(--white);
+}
+
+p.index-button {
+	grid-area: index;
+	justify-self: center;
+	font-weight: 600;
+	padding-inline-start: 5vw;
+}
+
+p.title-button {
+	grid-area: title;
+	font-weight: 600;
+}
+
+/* svg for affordance on mobile */
+svg {
+	grid-area: graphic;
+	max-width: clamp(1rem, 6vw, 2rem);
+	max-height: clamp(1rem, 6vw, 2rem);
+	align-self: center;
+
+	line {
+		stroke-width: calc(var(--stroke-width)/2);
+	}
+}
+
+/* ~~ main content ~~ */
+main {
+	grid-area: main;
+
+	/* color for introduction */
+	article {
+		background-color: var(--white);
+		color: var(--red);
+	}
+
+	/* color for colophon */
+	#colophon {
+		background-color: var(--red);
+		color: var(--white);
+		padding-block-end: 4.5rem;
+		border-top: var(--stroke-width) solid var(--white);
+	}
+
+	footer {
+		color: var(--white);
+		border-top: var(--stroke-width) solid var(--white);
+		padding-block-start: 4.5rem;
+		padding-block-end: 1.8rem;
+	}
+
+	#credit {
+		font-size: 0.85rem;
+		margin-block: 2rem;
+	}
+
+	/* subheadings */
+	article h2 {
+		font-weight: 600;
+		font-size: 1.25rem;
+		padding-block-start: 1rem;
+		padding-block-end: 1.5rem;
+		color: var(--gray);
+	}
+
+	article#colophon h2 {
+		color: var(--black);
+	}
+
+	article h3 {
+		font-weight: 600;
+		font-size: 1.1rem;
+		padding-block-end: 1.5rem;
+		color: var(--gray);
+	}
+
+	/* line length */
+	article p {
+		line-height: 1.074lh;
+		padding-block-end: 1.5rem;
+		padding-inline-end: 1rem;
+	}
+
+	article li {
+		line-height: 1.074lh;
+	}
+
+	/* link styles */
+	a {
+		color: var(--black);
+		text-decoration: underline;
+		text-underline-offset: 0.25em;
+		font-style: italic;
+	}
+
+	a:hover {
+		color: var(--red);
+	}
+
+	/* text emphasized section style */
+	section {
+		color: var(--black);
+	}
+
+	#author {
+		color: var(--gray);
+		font-weight: 500;
+	}
+
+	/* colophon and footer link styles */
+	#colophon a, footer a {
+		color: var(--white);
+	}
+
+	#colophon a:hover, footer a:hover {
+		color: var(--black);
+	}
+
+	#credit {
+		padding-block-end: 1rem;
+	}
+
+	/* emphasized text */
+	em {
+		font-style: italic;
+	}
+
+	/* specific link hover colors */
+	a#interaction-link:hover {
+		color: var(--orange);
+	}
+
+	a#homage-link:hover {
+		color: var(--pink);
+	}
+
+	a#theory-link:hover {
+		color: var(--blue);
+	}
+	
+	.divider {
+		margin-block: 1.5rem;
+		border-top: var(--stroke-width) solid var(--red);
+		opacity: 0.5;
+	}
+
+	.numbers {
+		color: var(--gray);
+		font-style: normal;
+	}
+}

@@ -1,0 +1,52 @@
+/* changing colors for this specific page */
+:root {
+	--page-color: var(--orange);
+
+	background-color: var(--page-color);
+}
+
+figure {
+	background-color: var(--page-color);
+}
+
+nav a {
+	color: var(--page-color);
+}
+
+nav a:hover {
+	background-color: var(--page-color);
+	color: var(--white);
+}
+
+nav a#active-link {
+	background-color: var(--page-color);
+	color: var(--white);
+}
+
+nav.top-nav li {
+	border-bottom: var(--stroke-width) solid var(--page-color);
+}
+
+nav.bottom-nav li {
+	border-top: var(--stroke-width) solid var(--page-color);
+}
+
+main {
+	article {
+		color: var(--page-color);
+	}
+
+	#colophon {
+		background-color: var(--page-color);
+	}
+}
+
+@media (width < 1024px) {
+	header {
+		background-color: var(--page-color);
+	}
+}
+
+.divider {
+	border-top: var(--stroke-width) solid var(--page-color);
+}

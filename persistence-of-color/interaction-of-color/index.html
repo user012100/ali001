@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Interaction of Color</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- using CSS layers -->
+		<style>
+			@import '../reset.css' layer(reset);
+			@import '../common.css' layer(common);
+			@import 'style.css' layer(page);
+		</style>
+	</head>
+	<body id="top">
+		<!-- section 1, cover -->
+		<figure>
+			<div class="cover">
+				<a href="../">
+					<img src="../assets/albers-square.jpg" alt="Abstract painting of nested squares in contrasting red tones.">
+				</a>
+				<figcaption>Josef Albers, Homage to the Square.</figcaption>
+			</div>
+		</figure>
+		<!-- section 2, title -->
+		<header>
+			<a href="#top">
+				<h1>
+					<!-- using &shy; to hyphenate word, from mdn: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/hyphens -->
+					<span>Inter&shy;action</span>
+					<span>of</span>
+					<span>Color</span>
+				</h1>
+			</a>
+		</header>
+		<!-- section 3, navigation -->
+		<nav class="top-nav">
+			<ol>
+				<li>
+					<a href="../">
+						<p class="index">I.</p>
+						<p class="title">Introduction</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+				<li>
+					<a href="#interaction-of-color" id="active-link">
+						<p class="index">II.</p>
+						<p class="title">Interaction</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+				<li>
+					<a href="../homage-to-an-homage-of-an-homage">
+						<p class="index">III.</p>
+						<!-- maybe use breakpoints here for longer titles? idk -->
+						<p class="title">Homage</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+				<li>
+					<a href="../everyday-color-theory">
+						<p class="index">IV.</p>
+						<p class="title">Theory</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+			</ol>
+		</nav>
+		<!-- section 4, main content -->
+		<main>
+			<article id="interaction-of-color">
+				<h2>Color juxtaposition — harmony — quantity</h2>
+				<h3>Harmony</h3>
+				<p>
+					<a href="https://en.wikipedia.org/wiki/Color_space">Color systems</a> usually lead to the conclusion
+					that certain constellations within a system provide <a href="https://en.wikipedia.org/wiki/Color_harmony">color harmony</a>.
+					They indicate that this is mainly the aim and the end
+					of color combination, of color juxtaposition.
+				</p>
+				<p>
+					As harmony and harmonizing is also a concern of music, so
+					<a href="https://en.wikipedia.org/wiki/Synesthesia#Chromesthesia">a parallelism of effect between tone combinations and color combinations</a>
+					seems unavoidable and appropriate. Although
+					a comparison of composed colors with composed tones is very challenging,
+					it should be mentioned that, while it can be helpful,
+					it is often misleading.
+				</p>
+				<p>
+					This is because different basic conditions of these media result in
+					different behavior.
+				</p>
+				<section>
+					<p>
+						Tones appear placed and directed predominantly in time from <em>before</em>
+						to <em>now</em> to <em>later</em>.
+					</p>
+				</section>
+				<p>
+					Their juxtaposition in a <a href="https://en.wikipedia.org/wiki/Musical_composition">musical composition</a> is perceived
+					within a prescribed sequence only. Vertically, so to say,
+					1 tone, or several simultaneously,
+					sound for a varying but restricted length of time.
+					Horizontally, the tones follow each other,
+					perhaps not in a straight line, but of necessity in a prescribed order
+					and only in 1 direction — forward.
+					Tones heard earlier fade, and those farther back disappear, vanish.
+					We do not hear them backward.
+				</p>
+				<p>
+					Colors appear connected predominantly in space. Therefore,
+					as constellations they can be seen in any direction and
+					at any speed. And as they remain, we can return to them repeatedly
+					and in many ways.
+				</p>
+				<p>
+					This remaining and not remaining, or vanishing and not vanishing,
+					shows only 1 essential difference between <a href="https://en.wikipedia.org/wiki/Sound">the field of tone</a>
+					and <a href="https://en.wikipedia.org/wiki/Color_theory">the field of color</a>.
+				</p>
+				<p>
+					Tone juxtapositions can be defined by their <a href="https://en.wikipedia.org/wiki/Acoustics">acoustical relationship</a>
+					and thus measured precisely by <a href="https://en.wikipedia.org/wiki/Wavelength">wave length</a>.
+				</p>
+				<p>
+					Consequently, <a href="https://en.wikipedia.org/wiki/Musical_notation">a graphic registration of tones in musical composition</a>
+					has been developed.
+				</p>
+				<p>
+					Color, also, can be measured, at least to some extent,
+					and particularly so when it is presented as direct color —
+					as the physicist registers it, by <a href="https://en.wikipedia.org/wiki/Visible_spectrum">optical wave length</a>.
+				</p>
+				<p>
+					<a href="https://en.wikipedia.org/wiki/Reflected_light">Reflected color</a>, however, coming from <a href="https://en.wikipedia.org/wiki/Paint">paint</a> and <a href="https://en.wikipedia.org/wiki/Pigment">pigment</a>
+					— our main medium — is much more difficult to define.
+				</p>
+				<p>
+					When analyzed with an <a href="https://en.wikipedia.org/wiki/Spectrograph">electrical spectrograph</a>
+					reflected color shows that it contains all <a href="https://en.wikipedia.org/wiki/Visible_spectrum">visible wave lengths</a>.
+					Therefore, any reflected color — not just white —
+					consists of other colors.
+				</p>
+				<p>
+					Color, when practically applied, not only appears in uncountable
+					shades and tints, but is additionally characterized
+					by shape and size, by recurrence and placement, and so on, of which
+					particularly shape and size are not directly applicable
+					to tones.
+				</p>
+				<section>
+					<p>
+						All this may signify why any color composition naturally defies
+						<a href="https://en.wikipedia.org/wiki/Musical_notation">such diagrammatic registration as notation in music</a>
+						and choreography in dance.
+					</p>
+				</section>
+				<p>
+					Color terms which could be considered parallel to tone intervals
+					are <a href="https://en.wikipedia.org/wiki/Complementary_colors">complementaries</a>, <a href="https://en.wikipedia.org/wiki/Color_scheme#Split-complementary">split complementaries</a>, <a href="https://en.wikipedia.org/wiki/Triad_(color_theory)">triads</a>, <a href="https://en.wikipedia.org/wiki/Tetradic_colors">tetrads</a>, and octads.
+					Though these characterize distance and constellation within <a href="https://en.wikipedia.org/wiki/Color_scheme">color systems</a>,
+					their deflections, such as incomplete triads and incomplete tetrads,
+					indicate that their measure is only arbitrary.
+				</p>
+				<p>
+					Significantly, complementaries, though they are the basic color contrast
+					or interval, are topographically quite vague.
+				</p>
+				<p>
+					In principle, a complementary is a color accompanied by its <a href="https://en.wikipedia.org/wiki/Afterimage">after-image</a>.
+				</p>
+				<p>
+					However, the complement of a specific color, when placed
+					in different systems, will look different.
+				</p>
+				<p>
+					Similarly, a triad or tetrad of one system will hardly fit
+					into another system.
+				</p>
+				<p>
+					In addition to quantity, form, and recurrence,
+					<a href="https://en.wikipedia.org/wiki/Color_theory#Color_context">wider aspects exert still more changing influences</a>.
+					These are:
+				</p>
+				<ul>
+					<li>Changed and changing light — and, even worse, several simultaneous lights;</li>
+					<li>reflection of lights and of colors;</li>
+					<li>direction and sequence of reading;</li>
+					<li>presentation in varying materials;</li>
+					<li>constant or altering juxtaposition of related and unrelated objects.</li>
+				</ul>
+				<p>
+					With these and other visual displacements, it should not be a surprise
+					that the sympathetic effect of the original “ideal” color combination
+					often appears changed, lost, and reversed.
+				</p>
+				<section>
+					<p>
+						Our conclusion: we may forget for a while those rules of thumb
+						of complementaries, whether complete or “split,” and of triads and
+						tetrads as well.
+						They are worn out.
+					</p>
+				</section>
+				<p>
+					Second, no <a href="https://en.wikipedia.org/wiki/Color_model">mechanical color system</a> is flexible enough
+					to precalculate the manifold changing factors, as named before,
+					in a single prescribed recipe.
+				</p>
+				<p>
+					Good painting, good coloring, is comparable to good cooking.
+					<a href="https://en.wikipedia.org/wiki/Recipe">Even a good cooking recipe</a> demands tasting and repeated tasting
+					while it is being followed.
+					And the best tasting still depends on a cook with taste.
+				</p>
+				<p>
+					By giving up preference for harmony,
+					we accept <a href="https://en.wikipedia.org/wiki/Dissonance">dissonance</a> to be as desirable as <a href="https://en.wikipedia.org/wiki/Consonance">consonance</a>.
+				</p>
+				<p>
+					Besides a balance through color harmony, which is comparable
+					to <a href="https://en.wikipedia.org/wiki/Symmetry">symmetry</a>, there is equilibrium possible between
+					color tensions, related to a more dynamic <a href="https://en.wikipedia.org/wiki/Asymmetry">asymmetry</a>.
+				</p>
+				<section>
+					<p>
+						Again: knowledge and its application is not our aim:
+						instead, it is flexible imagination, discovery, invention — taste.
+					</p>
+				</section>
+				<p>
+					With this study of color effects, that is, of <a href="https://en.wikipedia.org/wiki/Optical_illusion">color deception</a>,
+					a special interest in quantity — amount as well as recurrence —
+					has developed.
+				</p>
+				<div class="divider">
+				</div>
+				<h3>Quantity</h3>
+				<p>
+					Although quantity and quality often are considered disparate, in art and
+					music they appear closely related. We may even hear, “Quantity
+					is a quality,” because here quantity not only designates amounts,
+					as of weight or number, but also is a means of underlining,
+					of pronouncement, and a means of equilibrium, of balance.
+				</p>
+				<p>
+					One who particularly recognized the latter was <a href="https://en.wikipedia.org/wiki/Arthur_Schopenhauer">Schopenhauer</a>.
+					When he tried to improve <a href="https://en.wikipedia.org/wiki/Johann_Wolfgang_von_Goethe">Goethe’s</a> 6-part color circle — to Goethe's dismay —
+					he changed the previous presentation of 6 equal areas to decidedly
+					different quantities.
+				</p>
+				<p>
+					Thus yellow, the lightest color, appears in the smaller amount,
+					and its opposite, violet, as the darkest, in the largest amount,
+					He first allotted 3 equal thirds of a <a href="https://en.wikipedia.org/wiki/Color_wheel">color ring</a> to the 3 pairs
+					of opposites — yellow & violet — blue & orange — red & green.
+					Second, he subdivided those thirds, for the same order of pairs,
+					in <em class="numbers">¼ + ¾ − ⅓ + ⅔ − ½ + ½</em>. These figures
+					in fractions of 12ths (relatively 36ths) are proportionate to
+					<!-- i'm not sure if these colons from the text 
+					are supposed to be a division sign (÷)
+					or if the author meant it as "such that" (:) -->
+					<em class="numbers">3 : 9 − 4 : 8 − 6 : 6</em> equal parts.
+					When seen in a <a href="https://en.wikipedia.org/wiki/Color_wheel">color circle</a>, from yellow around to green, they present
+					the following quantities: <em class="numbers">3 : 4 : 6 : 9 : 8 : 6</em>.
+				</p>
+				<p>
+					The 2 basic quantity questions, how much and how often,
+					distinguish 2 kinds of quantity:
+					1 of size — extension in area — and
+					1 of recurrence — extension in number.
+					Both measurements concern predominance and emphasis.
+					They establish weight in space — and weight in time.
+				</p>
+				<p>
+					Such considerations are both the source and result of our quantity studies
+					in which 4 colors usually appear in 4 different juxtapositions,
+					so different that all 4 studies appear as unrelated as possible.
+				</p>
+				<p>
+					And thus they present changes in climate or temperature,
+					in tempo or <a href="https://en.wikipedia.org/wiki/Rhythm">rhythm</a> — that is, changes of atmosphere or mood,
+					so that the factual contents (the same 4 colors) are hidden or, better,
+					hardly recognizable.
+				</p>
+				<section>
+					<p>
+						To use a <a href="https://en.wikipedia.org/wiki/Theatre">theatrical parallel</a>:
+						A set of 4 colors is to be considered — singly as “actors,”
+						together as “cast.” They are to be presented in 4 different
+						arrangements — as “performances.”
+					</p>
+				</section>
+				<p>
+					Although they remain unchanged in hue and light, in “character,”
+					and appear in an unchanging outer frame, the “stage,”
+					they are to produce 4 different “scenes” or “plays,”
+					cach to be so different that one and the same set of colors will be seen as
+					4 different sets, presented by 4 different casts.
+				</p>
+				<p>
+					And all this can be achieved mainly through changes in quantity
+					which result in shifts of dominance, of recurrence, and consequently
+					of placement.
+				</p>
+				<section>
+				<p>
+					The essential question: which group of colors is ready to lose
+					its identity as a cast?
+				</p>
+				</section>
+				<p>
+					A parallel question: which distribution of appearance
+					(quantities of space, tine, and weight) protects, disguises
+					recognition of the same color cast?
+				</p>
+				<p>
+					Such quantity studies have taught us to believe that, independent
+					of harmony rules, any color “goes” or “works” with any other color,
+					presupposing that their quantities are appropriate.
+					We feel fortunate that so far there are no comprehensive rules
+					for such aims.
+				</p>
+				<p>
+					Here we may point to a discovery made by a few contemporary painters,
+					that the increase in amount of a color — not merely in size of canvas —
+					visually reduces distance. As a consequence, it often produces nearness —
+					meaning intimacy — and respect.
+				</p>
+				<p id="author">Written by <a href="https://en.wikipedia.org/wiki/Josef_Albers">Josef Albers</a>.</p>
+			</article>
+		</main>
+		<nav class="bottom-nav">
+			<ol>
+				<li>
+					<a href="../homage-to-an-homage-of-an-homage">
+						<p class="index">III.</p>
+						<p class="title">Next: Homage</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+				<li>
+					<a href="../">
+						<p class="index">I.</p>
+						<p class="title">Return: Introduction</p>
+						<svg viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+							<line x1="0" y1="12" x2="12" y2="0" stroke="currentColor"/>
+						</svg>
+					</a>
+				</li>
+			</ol>
+		</nav>
+	</body>
+</html>
