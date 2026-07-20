@@ -49,18 +49,11 @@ let orbitSpinAngle = 0;
 let orbitSpinVelocity = 0;
 let orbitTiltVelocity = 0;
 
-// The faster the orbit is currently being spun by dragging, the farther out the orbs fling from
-// the orbit's center, like centrifugal force. ORBIT_RADIUS_VELOCITY_SCALE converts the spin
-// velocity (radians/frame) into extra world-space radius, clamped by ORBIT_RADIUS_BOOST_MAX and
-// smoothed by ORBIT_RADIUS_BOOST_EASE so it settles back down once the spin decays.
 const ORBIT_RADIUS_VELOCITY_SCALE = 1000;
 const ORBIT_RADIUS_BOOST_MAX = 200;
 const ORBIT_RADIUS_BOOST_EASE = 0.06;
-// Tilting the ring contributes far more subtly to the radius boost than spinning it does.
 const ORBIT_RADIUS_TILT_WEIGHT = 0.2;
 let orbitRadiusBoost = 0;
-// Accumulated full 3D orientation of the orbit ring, initialized to the default tilted look.
-// (Uses plain math here, not p5's radians(), since p5 globals aren't attached yet at this point.)
 let orbitRotationMatrix = mat3Multiply(mat3RotY((28 * Math.PI) / 180), mat3RotX((38 * Math.PI) / 180));
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -351,9 +344,7 @@ function setup() {
 	}, { passive: false });
   });
 
-  bioOverlayEl.classList.add('open');
-  bioOverlayEl.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('bio-open');
+  settleBioOpenState();
   showBioCloseDotInstantly();
   applyBioRevealCss();
 
@@ -425,37 +416,23 @@ function fadeOutLoadOverlay() {
   let dot = document.getElementById('load-dot');
   if (!overlay) return;
   let shouldZoomOut = loadTookLong;
-  // Freeze the dot's current pulse-animated transform, then stop the animation and transition
-  // to a scaled-down transform instead, so it visibly shrinks away rather than just fading.
   if (dot) {
 	dot.style.transform = getComputedStyle(dot).transform;
 	dot.style.animation = 'none';
 	dot.offsetHeight;
+	dot.style.transitionDuration = shouldZoomOut
+	  ? (IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION)
+	  : '0.9s';
+	dot.style.opacity = 0;
+	dot.style.transform = 'translate(-50%, -50%) scale(0)';
   }
-  if (shouldZoomOut) {
-	if (dot) {
-	  dot.style.transitionDuration = IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION;
-	  dot.style.opacity = 0;
-	  dot.style.transform = 'translate(-50%, -50%) scale(0)';
-	}
-	if (IS_TOUCH_DEVICE) {
-	  overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
-	}
-	requestAnimationFrame(() => {
-	  overlay.classList.add('revealed');
-	  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-	});
-  } else {
-	if (dot) {
-	  dot.style.transitionDuration = '0.9s';
-	  dot.style.opacity = 0;
-	  dot.style.transform = 'translate(-50%, -50%) scale(0)';
-	}
-	requestAnimationFrame(() => {
-	  overlay.classList.add('hidden');
-	  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-	});
+  if (shouldZoomOut && IS_TOUCH_DEVICE) {
+	overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
   }
+  requestAnimationFrame(() => {
+	overlay.classList.add(shouldZoomOut ? 'revealed' : 'hidden');
+	overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  });
 }
 
 function setBioLinkActive(a, active) {
@@ -605,9 +582,6 @@ function mat3RotY(angle) {
   ];
 }
 
-// Rodrigues' rotation formula: builds a rotation matrix around an arbitrary
-// (unit-length) axis. Used for tilt so the rotation always happens around the
-// camera's actual current on-screen horizontal axis, rather than a fixed world axis.
 function mat3RotAxis(axis, angle) {
   let c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
   let x = axis.x, y = axis.y, z = axis.z;
@@ -639,8 +613,6 @@ function mat3Apply(m, x, y, z) {
   };
 }
 
-// Re-orthonormalizes an accumulated rotation matrix (Gram-Schmidt on rows) to prevent
-// floating-point drift from distorting the orbit after continuous incremental rotation.
 function mat3Orthonormalize(m) {
   let r0 = [m[0], m[1], m[2]];
   let r1 = [m[3], m[4], m[5]];
@@ -742,12 +714,6 @@ function computeHitRadius(p) {
 	: max(p.screenRadius * 1.6, 44);
 }
 
-function hitTestPoint(px, py, x, y, radius) {
-  let dx = px - x;
-  let dy = py - y;
-  return Math.sqrt(dx * dx + dy * dy) <= radius;
-}
-
 function findProjectHitIndex(px, py) {
   let hitIndex = -1;
   let closestDepth = Infinity;
@@ -760,9 +726,6 @@ function findProjectHitIndex(px, py) {
 	let dy = py - p.screenY;
 	let d = Math.sqrt(dx * dx + dy * dy);
 
-	// When multiple orbs' hit zones overlap at the cursor, prefer whichever orb is
-	// physically nearer the camera (smaller screenDepth), matching what's actually
-	// visible/on top, rather than whichever center happens to sit closest to the cursor.
 	if (d <= computeHitRadius(p) && p.screenDepth < closestDepth) {
 	  closestDepth = p.screenDepth;
 	  hitIndex = i;
@@ -813,6 +776,12 @@ function updateDesktopHoverSelection() {
   selectedIndex = hitIndex;
 }
 
+function markDragMovedIfPastThreshold(x, y) {
+  if (!dragMoved && (Math.abs(x - dragStartX) > CAMERA_DRAG_CLICK_THRESHOLD || Math.abs(y - dragStartY) > CAMERA_DRAG_CLICK_THRESHOLD)) {
+	dragMoved = true;
+  }
+}
+
 function updateCameraOrientation() {
   let dragDeltaX = 0;
   let dragDeltaY = 0;
@@ -825,9 +794,7 @@ function updateCameraOrientation() {
 	  if (touches.length > 0) {
 		currentX = touches[0].x;
 		currentY = touches[0].y;
-		if (!dragMoved && (Math.abs(currentX - dragStartX) > CAMERA_DRAG_CLICK_THRESHOLD || Math.abs(currentY - dragStartY) > CAMERA_DRAG_CLICK_THRESHOLD)) {
-		  dragMoved = true;
-		}
+		markDragMovedIfPastThreshold(currentX, currentY);
 		if (lastTouchDragX !== null) dragDeltaX = currentX - lastTouchDragX;
 		if (lastTouchDragY !== null) dragDeltaY = currentY - lastTouchDragY;
 		lastTouchDragX = currentX;
@@ -837,29 +804,13 @@ function updateCameraOrientation() {
 	} else {
 	  currentX = mouseX;
 	  currentY = mouseY;
-	  if (!dragMoved && (Math.abs(currentX - dragStartX) > CAMERA_DRAG_CLICK_THRESHOLD || Math.abs(currentY - dragStartY) > CAMERA_DRAG_CLICK_THRESHOLD)) {
-		dragMoved = true;
-	  }
+	  markDragMovedIfPastThreshold(currentX, currentY);
 	  dragDeltaX = mouseX - pmouseX;
 	  dragDeltaY = mouseY - pmouseY;
 	  dragging = true;
 	}
   }
 
-  // Horizontal drag spins the orbs along their orbit path (a phase shift applied before
-  // the ring's 3D tilt, so it always reads as "the orbs moving along the ring"). Vertical
-  // drag tumbles the whole ring around the camera's actual current on-screen horizontal
-  // axis (not a fixed world axis), so it stays natural as the camera auto-rotates. Both
-  // share the same sensitivity and inertia, and neither is clamped.
-  //
-  // The ring's face normal is its local Y axis; orbitRotationMatrix[4] is that axis'
-  // current world-space Y component (the camera always sits along world +Y looking at
-  // the origin, so this is the dot product of the normal with the direction facing the
-  // camera). Once the ring tips past edge-on and this crosses zero, we're looking at its
-  // back face, so the left/right spin sense flips to keep the visible face's motion
-  // matching the drag direction. Separately, grabbing the ring's far/top half on screen
-  // vs its near/bottom half also flips the perceived spin sense (like turning a wheel by
-  // its far edge vs its near edge), so that factor is combined in too.
   let normalFacingFactor = orbitRotationMatrix[4] >= 0 ? 1 : -1;
   let screenHalfFactor = (dragging && currentY < height / 2) ? -1 : 1;
   let spinDirection = normalFacingFactor * screenHalfFactor;
@@ -893,10 +844,6 @@ function updateHoverCursor() {
   document.body.style.cursor = hovering ? 'pointer' : 'default';
 }
 
-// While an orb is selected (hovered on desktop, tapped on touch), the bio text and links
-// should dim out of the way and stop being clickable, until the orb is deselected again.
-// Opacity is driven straight from timeScale (the same value, with the same easing, that
-// drives the skybox brightness fade), so both fades always move at identical speed.
 const BIO_DIM_OPACITY = 0.2;
 function updateBioDimmedState() {
   if (!bioOverlayEl) return;
@@ -919,9 +866,6 @@ function draw() {
 
   orbitHoverScale = lerp(orbitHoverScale, isHoveringAnyProject() ? ORBIT_HOVER_SLOWDOWN : 1, ORBIT_HOVER_EASE);
 
-  // Both spin (yaw-like motion along the orbit path) and tilt (tumbling the ring) fling the
-  // orbs outward from center, so their combined angular speed drives the radius boost. Tilt is
-  // weighted down heavily so it only nudges the radius subtly compared to spin.
   let combinedRadiusVelocity = Math.hypot(orbitSpinVelocity, orbitTiltVelocity * ORBIT_RADIUS_TILT_WEIGHT);
   let targetRadiusBoost = Math.min(combinedRadiusVelocity * ORBIT_RADIUS_VELOCITY_SCALE, ORBIT_RADIUS_BOOST_MAX);
   orbitRadiusBoost = lerp(orbitRadiusBoost, targetRadiusBoost, ORBIT_RADIUS_BOOST_EASE);
@@ -1005,13 +949,6 @@ function draw() {
 	p.orbitAngle += p.orbitSpeed * timeScale * orbitHoverScale;
   }
 
-  // Halos are drawn in their own pass, after every orb's opaque sphere is already in the
-  // depth buffer. That way each halo's normal depth TEST correctly checks it against every
-  // orb's real depth (not just the orb it belongs to, and regardless of loop order), so it's
-  // properly hidden behind whichever orbs are actually nearer the camera. Depth WRITE stays
-  // off for halos since nothing else draws after them: this avoids a translucent, nearly-
-  // faded-out halo from ever blocking anything (the cause of the old black-trail glitch),
-  // while still letting them draw correctly over anything farther away.
   for (let i = 0; i < projects.length; i++) {
 	let p = projects[i];
 	if (p.lightMix === undefined || p.lightMix <= 0.01 || !p.screenVisible) continue;
@@ -1065,22 +1002,6 @@ function draw() {
   updateBioDimmedState();
 }
 
-// The toggle dot always sits at world origin, dead center of the screen. When an orb currently
-// orbits in front of it (closer to the camera) and its CLICKABLE hit zone reaches over the dot,
-// that orb should win any press there: clicks/hovers should hit the orb, not the dot, even if
-// the click lands just outside the orb's small visual sphere but still within the generous hit
-// radius (computeHitRadius) that normally registers as a click on that orb. The dot's DOM hit
-// element normally sits above the canvas in stacking order (so it's clickable at all), so
-// disable its pointer events for as long as an occluding orb's hit zone is over it, letting the
-// click/hover fall through to the orb's own hit-testing underneath.
-//
-// The orb side of this check intentionally uses its real (larger) hit radius rather than its
-// visual radius, so "pressing near/on the orb" is judged the same way real clicks are judged.
-// The dot side still uses its own real on-screen VISUAL radius (not its much-larger DOM hit
-// radius from computeDotHitDiameter()): inflating the dot's side too would make it look
-// "occluded" whenever an orb merely passed nearby well behind it, even while the dot is still
-// fully visible on top -- only an orb that is actually in front and close enough to matter
-// should ever steal the click.
 function updateDotOcclusion(camDist) {
   if (!bioCloseDotEl) return;
 
@@ -1206,6 +1127,12 @@ function beginCameraDrag(x, y) {
   dragStartY = y;
 }
 
+const INTERACTIVE_ELEMENT_SELECTOR = '#label, #orb-link, #bio-close-dot, .bio-overlay-links a';
+
+function isInteractiveTarget(event) {
+  return !!(event && event.target && event.target.closest && event.target.closest(INTERACTIVE_ELEMENT_SELECTOR));
+}
+
 function finalizeTap(x, y) {
   handleTap(x, y);
   if (pendingOpenIndex !== -1) {
@@ -1217,7 +1144,7 @@ function finalizeTap(x, y) {
 }
 
 function mousePressed(event) {
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
+  if (isInteractiveTarget(event)) return false;
   beginCameraDrag(mouseX, mouseY);
   return false;
 }
@@ -1225,13 +1152,13 @@ function mousePressed(event) {
 function mouseReleased(event) {
   if (!isDraggingCamera) return false;
   isDraggingCamera = false;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
+  if (isInteractiveTarget(event)) return false;
   if (!dragMoved) finalizeTap(mouseX, mouseY);
   return false;
 }
 
 function touchStarted(event) {
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
+  if (isInteractiveTarget(event)) return false;
   if (touches.length > 0) {
 	beginCameraDrag(touches[0].x, touches[0].y);
 	lastTouchDragX = touches[0].x;
@@ -1245,7 +1172,7 @@ function touchEnded(event) {
   isDraggingCamera = false;
   lastTouchDragX = null;
   lastTouchDragY = null;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
+  if (isInteractiveTarget(event)) return false;
   if (!dragMoved) finalizeTap(dragStartX, dragStartY);
   return false;
 }
