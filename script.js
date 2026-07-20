@@ -11,15 +11,13 @@ let projects = [
 let skyImg;
 let citrusImg;
 let orbReflectShader;
+let skyMaskShader;
 
 let selectedIndex = -1;
-let keyboardFocusIndex = -1;
 let timeScale = 1;
 const TIME_SCALE_EASE = 0.06;
 let orbLabelEl;
 let orbLinkEl;
-
-let blackHole = { screenX: 0, screenY: 0, screenRadius: 0, screenVisible: false };
 
 let labelContentIndex = -1;
 let labelPhase = 'idle';
@@ -33,7 +31,7 @@ const ORBIT_CONTENT_RADIUS = ORBIT_MAJOR_RADIUS + 90;
 
 let camYaw = Math.PI;
 const CAM_AUTO_ROTATE_SPEED = 0.0009;
-const CAMERA_YAW_DRAG_SENSITIVITY = 0.00025;
+const CAMERA_YAW_DRAG_SENSITIVITY = 0.00045;
 
 const CAMERA_DRAG_CLICK_THRESHOLD = 8;
 let isDraggingCamera = false;
@@ -43,28 +41,33 @@ let dragStartY = 0;
 let lastTouchDragX = null;
 let lastTouchDragY = null;
 
-const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0022;
-const ORBIT_SPIN_VELOCITY_EASE = 0.15;
-const ORBIT_SPIN_INERTIA_DAMPING = 0.04;
+const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0035;
+const ORBIT_TILT_DRAG_SENSITIVITY = 0.0035;
+const ORBIT_SPIN_VELOCITY_EASE = 0.2;
+const ORBIT_SPIN_INERTIA_DAMPING = 0.028;
 let orbitSpinAngle = 0;
 let orbitSpinVelocity = 0;
+let orbitTiltVelocity = 0;
 
-const CAMERA_TILT_MAX_DEG = 25;
-const CAMERA_TILT_SENSITIVITY = 0.0011;
-const CAMERA_TILT_EASE = 0.18;
-const CAMERA_TILT_VELOCITY_EASE = 0.3;
-const CAMERA_TILT_INERTIA_DAMPING = 0.02;
-let camTiltX = 0;
-let camTiltZ = 0;
-let camTiltXBase = 0;
-let camTiltZBase = 0;
-let camTiltTargetX = 0;
-let camTiltTargetZ = 0;
-let camTiltVelocityX = 0;
+// The faster the orbit is currently being spun by dragging, the farther out the orbs fling from
+// the orbit's center, like centrifugal force. ORBIT_RADIUS_VELOCITY_SCALE converts the spin
+// velocity (radians/frame) into extra world-space radius, clamped by ORBIT_RADIUS_BOOST_MAX and
+// smoothed by ORBIT_RADIUS_BOOST_EASE so it settles back down once the spin decays.
+const ORBIT_RADIUS_VELOCITY_SCALE = 1000;
+const ORBIT_RADIUS_BOOST_MAX = 200;
+const ORBIT_RADIUS_BOOST_EASE = 0.06;
+// Tilting the ring contributes far more subtly to the radius boost than spinning it does.
+const ORBIT_RADIUS_TILT_WEIGHT = 0.2;
+let orbitRadiusBoost = 0;
+// Accumulated full 3D orientation of the orbit ring, initialized to the default tilted look.
+// (Uses plain math here, not p5's radians(), since p5 globals aren't attached yet at this point.)
+let orbitRotationMatrix = mat3Multiply(mat3RotY((28 * Math.PI) / 180), mat3RotX((38 * Math.PI) / 180));
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 const SKYBOX_MIN_BRIGHTNESS = 0.5;
+const SKY_MASK_SOFTNESS = 1.5;
+const SKY_MASK_OVERSHOOT = 1.05;
 
 const LIGHT_MIX_EASE = 0.08;
 const VISITED_MIX_EASE = 0.05;
@@ -72,37 +75,27 @@ const VISITED_MIX_EASE = 0.05;
 const HALO_SCALE = IS_TOUCH_DEVICE ? 1.2 : 1.15;
 const HALO_DEPTH_OFFSET_RATIO = 0.35;
 
-const BLACK_HOLE_SIZE = 28;
-const BLACK_HOLE_PULSE_AMPLITUDE = 5;
-const BLACK_HOLE_PULSE_SPEED = 0.012;
-let blackHolePulsePhase = 0;
-
-const BLACK_HOLE_HOVER_SCALE = 3;
-const BLACK_HOLE_HOVER_EASE = 0.05;
-let blackHoleHoverScale = 1;
+const TOGGLE_DOT_BASE_SIZE = 28;
+const BIO_CLOSE_DOT_HOVER_SCALE = 1.75;
+const BIO_CLOSE_DOT_HOVER_EASE = 0.15;
+const TOGGLE_DOT_DIP_SCALE = 0.15;
+const TOGGLE_DOT_COLOR_OPEN = [255, 255, 255];
+const TOGGLE_DOT_COLOR_CLOSED = [0, 0, 0];
+const TOGGLE_DOT_PULSE_PERIOD_MS = 6500;
+const TOGGLE_DOT_PULSE_AMPLITUDE = 0.24;
+let bioDotHovering = false;
+let bioDotHoverScale = 1;
+let toggleDotDiameterPx = 0;
+let toggleDotColor = TOGGLE_DOT_COLOR_CLOSED;
 
 const ORBIT_HOVER_SLOWDOWN = 0.15;
 const ORBIT_HOVER_EASE = 0.05;
 let orbitHoverScale = 1;
 
-let scrollTouchStartY = null;
-let scrollTouchLastY = null;
-let scrollTouchLastX = null;
-
-const BIO_SCROLL_SENSITIVITY = 0.0016;
-const BIO_TOUCH_SENSITIVITY = 0.0022;
-const BIO_REVEAL_EASE = 0.12;
-const BIO_REVEAL_CLOSE_FAST_EASE = 0.5;
-const BIO_REVEAL_CLOSE_FAST_THRESHOLD = 0.67;
-const BIO_REVEAL_OPEN_SETTLE_EASE = 0.03;
-const BIO_WHEEL_IDLE_MS = 350;
-let bioRevealTarget = 0;
-let bioRevealProgress = 0;
-let bioCloseDotRevealed = false;
-let bioGestureActive = false;
-let bioGestureAnchor = 0;
-let bioLastScrollDirection = 0;
-let bioWheelIdleTimer = null;
+const BIO_REVEAL_CLOSE_EASE = 0.09;
+const BIO_REVEAL_OPEN_SETTLE_EASE = 0.09;
+let bioRevealTarget = 1;
+let bioRevealProgress = 1;
 
 function computeFitDistance(vFov, aspect) {
   let distForHeight = ORBIT_CONTENT_RADIUS / Math.tan(vFov / 2);
@@ -122,7 +115,7 @@ function computeLoadDotDiameter() {
   let vFov = 2 * Math.atan((h / 2) / 800);
   let dist = computeFitDistance(vFov, w / h);
   dist = Math.min(Math.max(dist, 500), 4000);
-  return (BLACK_HOLE_SIZE * 800) / dist;
+  return (TOGGLE_DOT_BASE_SIZE * 800) / dist;
 }
 
 function sizeDotElement(dot) {
@@ -130,8 +123,6 @@ function sizeDotElement(dot) {
   let diameter = computeLoadDotDiameter();
   dot.style.width = diameter + 'px';
   dot.style.height = diameter + 'px';
-  dot.style.marginLeft = (-diameter / 2) + 'px';
-  dot.style.marginTop = (-diameter / 2) + 'px';
 }
 
 function sizeLoadDot() {
@@ -150,45 +141,32 @@ function sizeDotHitElement(dot) {
   let diameter = computeDotHitDiameter();
   dot.style.width = diameter + 'px';
   dot.style.height = diameter + 'px';
-  dot.style.marginLeft = (-diameter / 2) + 'px';
-  dot.style.marginTop = (-diameter / 2) + 'px';
 }
 
 const LOAD_DOT_DELAY_MS = 300;
 const MOBILE_ZOOM_DELAY_MS = 300;
 const DESKTOP_REVEAL_TRANSITION_DURATION = '1.6s';
 const MOBILE_REVEAL_TRANSITION_DURATION = '2.4s';
-let loadDotShown = false;
 let loadTookLong = false;
 let loadDotTimer;
-if (IS_TOUCH_DEVICE) {
+{
   let dot = document.getElementById('load-dot');
   if (dot) dot.classList.add('visible');
-  loadDotShown = true;
   loadDotTimer = setTimeout(() => {
 	loadTookLong = true;
-  }, MOBILE_ZOOM_DELAY_MS);
-} else {
-  loadDotTimer = setTimeout(() => {
-	let dot = document.getElementById('load-dot');
-	if (dot) dot.classList.add('visible');
-	loadDotShown = true;
-  }, LOAD_DOT_DELAY_MS);
+  }, IS_TOUCH_DEVICE ? MOBILE_ZOOM_DELAY_MS : LOAD_DOT_DELAY_MS);
 }
 
 let bioOverlayEl;
 let bioCloseDotEl;
-let bioCloseDotVisualEl;
-let bioCloseDotClosing = false;
-let bioLinksContainerEl;
-let bioOverlayOpen = false;
+let bioOverlayOpen = true;
 let bioLinks = [];
 let bioActiveLinks = new Set();
 
 const HALO_COLOR_DEFAULT = [255, 255, 255];
-const VISITED_TINT_HEX = ['#D1549E', '#4FAE86', '#C23B2E', '#D9CB55', '#E8703C', '#8C4FE8', '#23264A'];
+const VISITED_TINT_HEX = ['#DD5CA9', '#1DAF3A', '#D93B2B', '#F1DF42', '#FF6A2A', '#965AF2', '#67B7EC'];
 const VISITED_TINT_COLORS = VISITED_TINT_HEX.map(hexToRgb);
-const VISITED_TINT_OPACITY = [1, 1, 1, 1, 1, 1, 0.5];
+const VISITED_TINT_OPACITY = [1, 1, 1, 1, 1, 1, 1];
 const VISITED_STORAGE_KEY = 'visitedProjectUrls';
 
 function hexToRgb(hex) {
@@ -260,6 +238,45 @@ void main() {
 }
 `;
 
+const SKY_MASK_VERT = `
+precision highp float;
+attribute vec3 aPosition;
+attribute vec2 aTexCoord;
+
+uniform mat4 uModelViewMatrix;
+uniform mat4 uProjectionMatrix;
+
+varying vec2 vTexCoord;
+
+void main() {
+  vTexCoord = aTexCoord;
+  gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1.0);
+}
+`;
+
+const SKY_MASK_FRAG = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+uniform sampler2D uSkyTex;
+uniform float uBrightness;
+uniform vec2 uMaskCenter;
+uniform float uMaskRadius;
+uniform float uMaskSoftness;
+
+varying vec2 vTexCoord;
+
+void main() {
+  vec3 skyColor = texture2D(uSkyTex, vTexCoord).rgb * uBrightness;
+  float dist = distance(gl_FragCoord.xy, uMaskCenter);
+  float skyVisibility = smoothstep(uMaskRadius - uMaskSoftness, uMaskRadius + uMaskSoftness, dist);
+  gl_FragColor = vec4(skyColor * skyVisibility, skyVisibility);
+}
+`;
+
 // Skybox texture: "Lonely Road Afternoon Puresky" from Poly Haven (CC0)
 // https://polyhaven.com/a/lonely_road_afternoon_puresky
 function preload() {
@@ -291,27 +308,22 @@ function setup() {
 	markProjectVisited(p);
   }, { passive: false });
   orbReflectShader = createShader(ORB_REFLECT_VERT, ORB_REFLECT_FRAG);
+  skyMaskShader = createShader(SKY_MASK_VERT, SKY_MASK_FRAG);
   moveFallbackContentIntoCanvas(cnv.canvas);
   syncProjectsFromDom();
   applyVisitedState();
 
   bioOverlayEl = document.getElementById('bio-overlay');
-  bioLinksContainerEl = document.querySelector('.bio-overlay-links');
 
   bioCloseDotEl = document.getElementById('bio-close-dot');
-  bioCloseDotVisualEl = document.getElementById('bio-close-dot-visual');
   bioCloseDotEl.addEventListener('click', (e) => {
 	e.stopPropagation();
-	bioCloseDotClosing = true;
-	shrinkBioCloseDot();
-	closeBioOverlay();
+	toggleBioOverlay();
   });
   bioCloseDotEl.addEventListener('touchend', (e) => {
 	e.preventDefault();
 	e.stopPropagation();
-	bioCloseDotClosing = true;
-	shrinkBioCloseDot();
-	closeBioOverlay();
+	toggleBioOverlay();
   }, { passive: false });
   if (!IS_TOUCH_DEVICE) {
 	bioCloseDotEl.addEventListener('mouseenter', () => setBioCloseDotHover(true));
@@ -326,7 +338,6 @@ function setup() {
 	  a.addEventListener('mouseenter', () => setBioLinkActive(a, true));
 	  a.addEventListener('mouseleave', () => setBioLinkActive(a, false));
 	});
-	window.addEventListener('resize', renderBioLinksMask);
   }
 
   bioLinks.forEach((a) => {
@@ -338,100 +349,72 @@ function setup() {
 	}, { passive: false });
   });
 
-  window.addEventListener('wheel', handleScrollWheel, { passive: true });
-  window.addEventListener('touchstart', handleScrollTouchStart, { passive: true });
-  window.addEventListener('touchmove', handleScrollTouchMove, { passive: true });
-  window.addEventListener('touchend', handleScrollTouchEnd, { passive: true });
+  bioOverlayEl.classList.add('open');
+  bioOverlayEl.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('bio-open');
+  showBioCloseDotInstantly();
+  applyBioRevealCss();
 
   fadeOutLoadOverlay();
 }
 
-function handleScrollWheel(e) {
-  updateBioRevealFromInput(e.deltaY * BIO_SCROLL_SENSITIVITY);
-  clearTimeout(bioWheelIdleTimer);
-  bioWheelIdleTimer = setTimeout(endBioScrollGesture, BIO_WHEEL_IDLE_MS);
-}
-
-function handleScrollTouchStart(e) {
-  if (e.touches.length !== 1) {
-	scrollTouchStartY = null;
-	scrollTouchLastY = null;
-	scrollTouchLastX = null;
-	return;
-  }
-  scrollTouchStartY = e.touches[0].clientY;
-  scrollTouchLastY = scrollTouchStartY;
-  scrollTouchLastX = e.touches[0].clientX;
-}
-
-function handleScrollTouchMove(e) {
-  if (isDraggingCamera && dragMoved) return;
-  if (scrollTouchLastY === null || e.touches.length !== 1) return;
-  let x = e.touches[0].clientX;
-  let y = e.touches[0].clientY;
-  let fingerDeltaX = x - scrollTouchLastX;
-  let fingerDeltaY = y - scrollTouchLastY;
-  scrollTouchLastX = x;
-  scrollTouchLastY = y;
-  if (Math.abs(fingerDeltaX) > Math.abs(fingerDeltaY)) return;
-  updateBioRevealFromInput(-fingerDeltaY * BIO_TOUCH_SENSITIVITY);
-}
-
-function handleScrollTouchEnd(e) {
-  scrollTouchStartY = null;
-  scrollTouchLastY = null;
-  scrollTouchLastX = null;
-  endBioScrollGesture();
-}
-
-function updateBioRevealFromInput(delta) {
-  if (delta === 0) return;
-  if (!bioGestureActive) {
-	bioGestureActive = true;
-	bioGestureAnchor = (bioRevealTarget > 0.5) ? 1 : 0;
-  }
-  bioLastScrollDirection = (delta > 0) ? 1 : -1;
-  bioRevealTarget = Math.min(1, Math.max(0, bioRevealTarget + delta));
-  if (bioRevealTarget > 0 && !bioOverlayOpen) settleBioOpenState();
-}
-
-function endBioScrollGesture() {
-  if (!bioGestureActive) return;
-  bioGestureActive = false;
-  let movingAwayFromAnchor = (bioGestureAnchor === 0 && bioLastScrollDirection > 0)
-	|| (bioGestureAnchor === 1 && bioLastScrollDirection < 0);
-  bioRevealTarget = movingAwayFromAnchor ? (1 - bioGestureAnchor) : bioGestureAnchor;
-  if (bioRevealTarget > 0 && !bioOverlayOpen) settleBioOpenState();
+function showBioCloseDotInstantly() {
+  if (bioCloseDotEl) bioCloseDotEl.style.transition = 'none';
+  updateBioCloseDot();
+  if (bioCloseDotEl) bioCloseDotEl.offsetHeight;
+  if (bioCloseDotEl) bioCloseDotEl.style.transition = '';
 }
 
 function updateBioReveal() {
-  let closing = bioRevealTarget < bioRevealProgress;
   let growing = bioRevealTarget > bioRevealProgress;
-  let ease = BIO_REVEAL_EASE;
-  if (closing && bioRevealProgress > BIO_REVEAL_CLOSE_FAST_THRESHOLD) {
-	ease = BIO_REVEAL_CLOSE_FAST_EASE;
-  } else if (growing && !bioGestureActive) {
-	ease = BIO_REVEAL_OPEN_SETTLE_EASE;
-  }
+  let ease = growing ? BIO_REVEAL_OPEN_SETTLE_EASE : BIO_REVEAL_CLOSE_EASE;
   bioRevealProgress = lerp(bioRevealProgress, bioRevealTarget, ease);
   applyBioRevealCss();
-
-  if (bioOverlayOpen && !bioCloseDotRevealed && bioRevealTarget >= 1 && bioRevealProgress >= 0.6) {
-	bioCloseDotRevealed = true;
-	if (bioCloseDotVisualEl) bioCloseDotVisualEl.style.opacity = 1;
-	updateBioCloseDot();
-  }
+  updateToggleDotVisual();
 
   if (bioOverlayOpen && bioRevealTarget <= 0 && bioRevealProgress < 0.002) {
 	bioRevealProgress = 0;
 	applyBioRevealCss();
+	updateToggleDotVisual();
 	finalizeBioClose();
   }
 }
 
+function computeBioMaskMaxRadius() {
+  return Math.sqrt(width * width + height * height) / 2 * SKY_MASK_OVERSHOOT;
+}
+
 function applyBioRevealCss() {
   if (!bioOverlayEl) return;
-  bioOverlayEl.style.setProperty('--bio-reveal', (bioRevealProgress * 150) + '%');
+  let radiusPx = bioRevealProgress * computeBioMaskMaxRadius();
+  bioOverlayEl.style.clipPath = `circle(${radiusPx}px at 50% 50%)`;
+}
+
+function computeDotPulseScale() {
+  let phase = (millis() % TOGGLE_DOT_PULSE_PERIOD_MS) / TOGGLE_DOT_PULSE_PERIOD_MS;
+  return 1 - TOGGLE_DOT_PULSE_AMPLITUDE * Math.cos(phase * Math.PI * 2);
+}
+
+function updateToggleDotVisual() {
+  let hoverTarget = bioDotHovering ? BIO_CLOSE_DOT_HOVER_SCALE : 1;
+  bioDotHoverScale = lerp(bioDotHoverScale, hoverTarget, BIO_CLOSE_DOT_HOVER_EASE);
+
+  let fullDiameter = computeLoadDotDiameter();
+  let opening = bioRevealTarget > 0.5;
+  let sizeScale;
+  let color;
+
+  if (opening) {
+	sizeScale = TOGGLE_DOT_DIP_SCALE + (1 - TOGGLE_DOT_DIP_SCALE) * bioRevealProgress;
+	color = TOGGLE_DOT_COLOR_OPEN;
+  } else {
+	let restDistance = 1 - Math.abs(bioRevealProgress - 0.5) * 2;
+	sizeScale = 1 - restDistance * (1 - TOGGLE_DOT_DIP_SCALE);
+	color = bioRevealProgress > 0.5 ? TOGGLE_DOT_COLOR_OPEN : TOGGLE_DOT_COLOR_CLOSED;
+  }
+
+  toggleDotDiameterPx = fullDiameter * sizeScale * bioDotHoverScale * computeDotPulseScale();
+  toggleDotColor = color;
 }
 
 function fadeOutLoadOverlay() {
@@ -439,11 +422,19 @@ function fadeOutLoadOverlay() {
   let overlay = document.getElementById('load-overlay');
   let dot = document.getElementById('load-dot');
   if (!overlay) return;
-  let shouldZoomOut = IS_TOUCH_DEVICE ? loadTookLong : loadDotShown;
+  let shouldZoomOut = loadTookLong;
+  // Freeze the dot's current pulse-animated transform, then stop the animation and transition
+  // to a scaled-down transform instead, so it visibly shrinks away rather than just fading.
+  if (dot) {
+	dot.style.transform = getComputedStyle(dot).transform;
+	dot.style.animation = 'none';
+	dot.offsetHeight;
+  }
   if (shouldZoomOut) {
 	if (dot) {
 	  dot.style.transitionDuration = IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION;
 	  dot.style.opacity = 0;
+	  dot.style.transform = 'translate(-50%, -50%) scale(0)';
 	}
 	if (IS_TOUCH_DEVICE) {
 	  overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
@@ -456,6 +447,7 @@ function fadeOutLoadOverlay() {
 	if (dot) {
 	  dot.style.transitionDuration = '0.9s';
 	  dot.style.opacity = 0;
+	  dot.style.transform = 'translate(-50%, -50%) scale(0)';
 	}
 	requestAnimationFrame(() => {
 	  overlay.classList.add('hidden');
@@ -468,58 +460,9 @@ function setBioLinkActive(a, active) {
   if (active) bioActiveLinks.add(a);
   else bioActiveLinks.delete(a);
   a.classList.toggle('bio-link-active', active);
-  renderBioLinksMask();
-}
-
-function renderBioLinksMask() {
-  if (IS_TOUCH_DEVICE) return;
-  if (!bioOverlayOpen || bioLinks.length === 0) return;
-  let vw = window.innerWidth, vh = window.innerHeight;
-  let holes = '';
-  bioLinks.forEach((a) => {
-	if (bioActiveLinks.has(a)) return;
-	let rect = a.getBoundingClientRect();
-	let cs = getComputedStyle(a);
-	let fontSize = parseFloat(cs.fontSize);
-	let fontFamily = cs.fontFamily.replace(/"/g, "'");
-	let text = escapeXmlText(a.textContent);
-	let midY = rect.top + rect.height / 2;
-	holes += `<text x='${rect.left}' y='${midY}' dominant-baseline='central' `
-	  + `font-family='${fontFamily}' font-size='${fontSize}' font-weight='${cs.fontWeight}' fill='black'>${text}</text>`;
-  });
-  if (!holes) {
-	clearBioLinksMask();
-	return;
-  }
-  let svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${vw}' height='${vh}' viewBox='0 0 ${vw} ${vh}'>`
-	+ `<mask id='m'>`
-	+ `<rect x='0' y='0' width='${vw}' height='${vh}' fill='white'/>`
-	+ holes
-	+ `</mask>`
-	+ `<rect x='0' y='0' width='${vw}' height='${vh}' fill='white' mask='url(#m)'/>`
-	+ `</svg>`;
-  let url = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-  bioOverlayEl.style.maskSize = `${vw}px ${vh}px`;
-  bioOverlayEl.style.webkitMaskSize = `${vw}px ${vh}px`;
-  bioOverlayEl.style.maskPosition = '0 0';
-  bioOverlayEl.style.webkitMaskPosition = '0 0';
-  bioOverlayEl.style.maskRepeat = 'no-repeat';
-  bioOverlayEl.style.webkitMaskRepeat = 'no-repeat';
-  bioOverlayEl.style.maskImage = url;
-  bioOverlayEl.style.webkitMaskImage = url;
-}
-
-function clearBioLinksMask() {
-  bioOverlayEl.style.maskImage = 'none';
-  bioOverlayEl.style.webkitMaskImage = 'none';
-}
-
-function escapeXmlText(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function openBioOverlay() {
-  if (bioOverlayOpen) return;
   bioRevealTarget = 1;
   settleBioOpenState();
 }
@@ -529,44 +472,31 @@ function settleBioOpenState() {
   bioOverlayEl.classList.add('open');
   bioOverlayEl.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bio-open');
-  renderBioLinksMask();
-  bioCloseDotClosing = false;
-  bioCloseDotRevealed = false;
-  shrinkBioCloseDot();
 }
 
 function updateBioCloseDot() {
   sizeDotHitElement(bioCloseDotEl);
-  sizeDotElement(bioCloseDotVisualEl);
+  updateToggleDotVisual();
 }
 
 function setBioCloseDotHover(hovering) {
-  if (!bioCloseDotVisualEl) return;
-  if (bioCloseDotClosing) return;
-  let diameter = computeLoadDotDiameter() * (hovering ? BLACK_HOLE_HOVER_SCALE : 1);
-  bioCloseDotVisualEl.style.width = diameter + 'px';
-  bioCloseDotVisualEl.style.height = diameter + 'px';
-  bioCloseDotVisualEl.style.marginLeft = (-diameter / 2) + 'px';
-  bioCloseDotVisualEl.style.marginTop = (-diameter / 2) + 'px';
+  bioDotHovering = hovering;
 }
 
-function shrinkBioCloseDot() {
-  if (!bioCloseDotVisualEl) return;
-  bioCloseDotVisualEl.style.width = '0px';
-  bioCloseDotVisualEl.style.height = '0px';
-  bioCloseDotVisualEl.style.marginLeft = '0px';
-  bioCloseDotVisualEl.style.marginTop = '0px';
-  bioCloseDotVisualEl.style.opacity = 0;
+function toggleBioOverlay() {
+  if (bioRevealTarget > 0.5) {
+	closeBioOverlay();
+  } else {
+	openBioOverlay();
+  }
 }
 
 function closeBioOverlay() {
-  if (!bioOverlayOpen) return;
   bioRevealTarget = 0;
 }
 
 function finalizeBioClose() {
   bioOverlayOpen = false;
-  bioCloseDotRevealed = false;
   bioOverlayEl.classList.remove('open');
   bioOverlayEl.setAttribute('aria-hidden', 'true');
   resetBioLinksAfterClose();
@@ -579,7 +509,6 @@ function resetBioLinksAfterClose() {
   if (!IS_TOUCH_DEVICE) {
 	bioLinks.forEach((a) => a.classList.remove('bio-link-active'));
   }
-  clearBioLinksMask();
 }
 
 function moveFallbackContentIntoCanvas(canvasEl) {
@@ -656,6 +585,80 @@ function currentVFov() {
   return 2 * Math.atan((height / 2) / 800);
 }
 
+function mat3RotX(angle) {
+  let c = Math.cos(angle), s = Math.sin(angle);
+  return [
+	1, 0, 0,
+	0, c, -s,
+	0, s, c
+  ];
+}
+
+function mat3RotY(angle) {
+  let c = Math.cos(angle), s = Math.sin(angle);
+  return [
+	c, 0, s,
+	0, 1, 0,
+	-s, 0, c
+  ];
+}
+
+// Rodrigues' rotation formula: builds a rotation matrix around an arbitrary
+// (unit-length) axis. Used for tilt so the rotation always happens around the
+// camera's actual current on-screen horizontal axis, rather than a fixed world axis.
+function mat3RotAxis(axis, angle) {
+  let c = Math.cos(angle), s = Math.sin(angle), t = 1 - c;
+  let x = axis.x, y = axis.y, z = axis.z;
+  return [
+	t * x * x + c, t * x * y - s * z, t * x * z + s * y,
+	t * x * y + s * z, t * y * y + c, t * y * z - s * x,
+	t * x * z - s * y, t * y * z + s * x, t * z * z + c
+  ];
+}
+
+function mat3Multiply(a, b) {
+  let r = new Array(9);
+  for (let row = 0; row < 3; row++) {
+	for (let col = 0; col < 3; col++) {
+	  r[row * 3 + col] =
+		a[row * 3 + 0] * b[0 * 3 + col] +
+		a[row * 3 + 1] * b[1 * 3 + col] +
+		a[row * 3 + 2] * b[2 * 3 + col];
+	}
+  }
+  return r;
+}
+
+function mat3Apply(m, x, y, z) {
+  return {
+	x: m[0] * x + m[1] * y + m[2] * z,
+	y: m[3] * x + m[4] * y + m[5] * z,
+	z: m[6] * x + m[7] * y + m[8] * z
+  };
+}
+
+// Re-orthonormalizes an accumulated rotation matrix (Gram-Schmidt on rows) to prevent
+// floating-point drift from distorting the orbit after continuous incremental rotation.
+function mat3Orthonormalize(m) {
+  let r0 = [m[0], m[1], m[2]];
+  let r1 = [m[3], m[4], m[5]];
+  let r2 = [m[6], m[7], m[8]];
+
+  let dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  let norm = (a) => Math.sqrt(dot(a, a));
+  let sub = (a, b, s) => [a[0] - b[0] * s, a[1] - b[1] * s, a[2] - b[2] * s];
+  let scale = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+
+  r0 = scale(r0, 1 / norm(r0));
+  r1 = sub(r1, r0, dot(r1, r0));
+  r1 = scale(r1, 1 / norm(r1));
+  r2 = sub(r2, r0, dot(r2, r0));
+  r2 = sub(r2, r1, dot(r2, r1));
+  r2 = scale(r2, 1 / norm(r2));
+
+  return [r0[0], r0[1], r0[2], r1[0], r1[1], r1[2], r2[0], r2[1], r2[2]];
+}
+
 function computeCameraBasis(eye, up) {
   let zLen = Math.sqrt(eye.x * eye.x + eye.y * eye.y + eye.z * eye.z);
   let zx = eye.x / zLen, zy = eye.y / zLen, zz = eye.z / zLen;
@@ -702,6 +705,24 @@ function worldRadiusToScreenRadius(worldRadius, depth) {
   return (worldRadius / (depth * tanHalf)) * (height / 2);
 }
 
+function screenRadiusToWorldRadius(screenRadius, depth) {
+  let tanHalf = Math.tan(currentVFov() / 2);
+  return (screenRadius / (height / 2)) * depth * tanHalf;
+}
+
+function drawToggleDot(camEye, camUp, camDist) {
+  let radius = screenRadiusToWorldRadius(toggleDotDiameterPx / 2, camDist);
+  if (radius <= 0) return;
+  let [r, g, b] = toggleDotColor;
+
+  push();
+  noStroke();
+  noLights();
+  fill(r, g, b, 255);
+  sphere(radius, 24, 24);
+  pop();
+}
+
 function computeCameraLightDir(eye, up) {
   let basis = computeCameraBasis(eye, up);
   let r = basis.right, u = basis.up, fwd = basis.forward;
@@ -727,7 +748,7 @@ function hitTestPoint(px, py, x, y, radius) {
 
 function findProjectHitIndex(px, py) {
   let hitIndex = -1;
-  let closestDist = Infinity;
+  let closestDepth = Infinity;
 
   for (let i = 0; i < projects.length; i++) {
 	let p = projects[i];
@@ -737,8 +758,11 @@ function findProjectHitIndex(px, py) {
 	let dy = py - p.screenY;
 	let d = Math.sqrt(dx * dx + dy * dy);
 
-	if (d <= computeHitRadius(p) && d < closestDist) {
-	  closestDist = d;
+	// When multiple orbs' hit zones overlap at the cursor, prefer whichever orb is
+	// physically nearer the camera (smaller screenDepth), matching what's actually
+	// visible/on top, rather than whichever center happens to sit closest to the cursor.
+	if (d <= computeHitRadius(p) && p.screenDepth < closestDepth) {
+	  closestDepth = p.screenDepth;
 	  hitIndex = i;
 	}
   }
@@ -755,8 +779,6 @@ function computeProjectHoverZone(p) {
 
   if (labelContentIndex !== -1 && projects[labelContentIndex] === p && orbLabelEl && orbLabelEl.style.opacity === '1') {
 	let labelRect = orbLabelEl.getBoundingClientRect();
-	left = Math.min(left, labelRect.left);
-	right = Math.max(right, labelRect.right);
 	bottom = Math.max(bottom, labelRect.bottom);
   }
 
@@ -775,18 +797,12 @@ function isMouseOverLabelZone() {
 
 function isHoveringAnyProject() {
   if (IS_TOUCH_DEVICE) return false;
-  if (bioOverlayOpen) return false;
 
   return findProjectHitIndex(mouseX, mouseY) !== -1 || isMouseOverLabelZone();
 }
 
 function updateDesktopHoverSelection() {
   if (IS_TOUCH_DEVICE) return;
-  if (keyboardFocusIndex !== -1) return;
-  if (bioOverlayOpen) {
-	selectedIndex = -1;
-	return;
-  }
 
   let hitIndex = findProjectHitIndex(mouseX, mouseY);
   if (hitIndex === -1 && isMouseOverLabelZone()) {
@@ -802,7 +818,7 @@ function updateCameraOrientation() {
   let currentX = 0;
   let currentY = 0;
 
-  if (isDraggingCamera && !bioOverlayOpen) {
+  if (isDraggingCamera) {
 	if (IS_TOUCH_DEVICE) {
 	  if (touches.length > 0) {
 		currentX = touches[0].x;
@@ -828,61 +844,55 @@ function updateCameraOrientation() {
 	}
   }
 
-  let spinDirection = (dragging && currentY < height / 2) ? -1 : 1;
+  // Horizontal drag spins the orbs along their orbit path (a phase shift applied before
+  // the ring's 3D tilt, so it always reads as "the orbs moving along the ring"). Vertical
+  // drag tumbles the whole ring around the camera's actual current on-screen horizontal
+  // axis (not a fixed world axis), so it stays natural as the camera auto-rotates. Both
+  // share the same sensitivity and inertia, and neither is clamped.
+  //
+  // The ring's face normal is its local Y axis; orbitRotationMatrix[4] is that axis'
+  // current world-space Y component (the camera always sits along world +Y looking at
+  // the origin, so this is the dot product of the normal with the direction facing the
+  // camera). Once the ring tips past edge-on and this crosses zero, we're looking at its
+  // back face, so the left/right spin sense flips to keep the visible face's motion
+  // matching the drag direction. Separately, grabbing the ring's far/top half on screen
+  // vs its near/bottom half also flips the perceived spin sense (like turning a wheel by
+  // its far edge vs its near edge), so that factor is combined in too.
+  let normalFacingFactor = orbitRotationMatrix[4] >= 0 ? 1 : -1;
+  let screenHalfFactor = (dragging && currentY < height / 2) ? -1 : 1;
+  let spinDirection = normalFacingFactor * screenHalfFactor;
   let targetSpinVelocity = dragging ? dragDeltaX * ORBIT_SPIN_DRAG_SENSITIVITY * spinDirection : 0;
+  let targetTiltVelocity = dragging ? -dragDeltaY * ORBIT_TILT_DRAG_SENSITIVITY : 0;
   let spinEase = dragging ? ORBIT_SPIN_VELOCITY_EASE : ORBIT_SPIN_INERTIA_DAMPING;
   orbitSpinVelocity = lerp(orbitSpinVelocity, targetSpinVelocity, spinEase);
   orbitSpinAngle += orbitSpinVelocity;
+  orbitTiltVelocity = lerp(orbitTiltVelocity, targetTiltVelocity, spinEase);
+
+  let tiltAxis = { x: -Math.cos(camYaw), y: 0, z: Math.sin(camYaw) };
+  orbitRotationMatrix = mat3Multiply(mat3RotAxis(tiltAxis, orbitTiltVelocity), orbitRotationMatrix);
+  orbitRotationMatrix = mat3Orthonormalize(orbitRotationMatrix);
 
   camYaw += CAM_AUTO_ROTATE_SPEED * timeScale;
   if (dragging) {
 	camYaw += dragDeltaX * CAMERA_YAW_DRAG_SENSITIVITY;
   }
-
-  let maxTiltRad = CAMERA_TILT_MAX_DEG * (Math.PI / 180);
-
-  let softClampTilt = (value) => maxTiltRad * Math.tanh(value / maxTiltRad);
-  if (dragging) {
-	let totalDragY = currentY - dragStartY;
-	camTiltTargetX = softClampTilt(camTiltXBase + totalDragY * CAMERA_TILT_SENSITIVITY);
-	let instantTiltVelocityX = dragDeltaY * CAMERA_TILT_SENSITIVITY;
-	camTiltVelocityX = lerp(camTiltVelocityX, instantTiltVelocityX, CAMERA_TILT_VELOCITY_EASE);
-  } else {
-
-	camTiltVelocityX = lerp(camTiltVelocityX, 0, CAMERA_TILT_INERTIA_DAMPING);
-	camTiltTargetX = softClampTilt(camTiltTargetX + camTiltVelocityX);
-  }
-
-  camTiltZ = lerp(camTiltZ, camTiltTargetZ, CAMERA_TILT_EASE);
-  camTiltX = lerp(camTiltX, camTiltTargetX, CAMERA_TILT_EASE);
-}
-
-function isHoveringBlackHole() {
-  if (IS_TOUCH_DEVICE) return false;
-  if (bioOverlayOpen) return false;
-  if (!blackHole.screenVisible) return false;
-  return hitTestPoint(mouseX, mouseY, blackHole.screenX, blackHole.screenY, computeHitRadius(blackHole));
 }
 
 function updateHoverCursor() {
   if (IS_TOUCH_DEVICE) return;
-  if (bioOverlayOpen) {
-	document.body.style.cursor = 'default';
-	return;
-  }
 
   if (isDraggingCamera) {
 	document.body.style.cursor = 'grabbing';
 	return;
   }
 
-  let hovering = isHoveringBlackHole() || isHoveringAnyProject();
+  let hovering = isHoveringAnyProject();
 
   document.body.style.cursor = hovering ? 'pointer' : 'default';
 }
 
 function draw() {
-  background(0);
+  clear();
 
   updateDesktopHoverSelection();
 
@@ -891,21 +901,23 @@ function draw() {
 
   updateCameraOrientation();
   updateBioReveal();
-  blackHolePulsePhase += BLACK_HOLE_PULSE_SPEED * timeScale;
-  let blackHoleSize = BLACK_HOLE_SIZE + sin(blackHolePulsePhase) * BLACK_HOLE_PULSE_AMPLITUDE;
-
-  let blackHoleHovering = isHoveringBlackHole();
-  blackHoleHoverScale = lerp(blackHoleHoverScale, blackHoleHovering ? BLACK_HOLE_HOVER_SCALE : 1, BLACK_HOLE_HOVER_EASE);
-  blackHoleSize *= blackHoleHoverScale;
 
   orbitHoverScale = lerp(orbitHoverScale, isHoveringAnyProject() ? ORBIT_HOVER_SLOWDOWN : 1, ORBIT_HOVER_EASE);
+
+  // Both spin (yaw-like motion along the orbit path) and tilt (tumbling the ring) fling the
+  // orbs outward from center, so their combined angular speed drives the radius boost. Tilt is
+  // weighted down heavily so it only nudges the radius subtly compared to spin.
+  let combinedRadiusVelocity = Math.hypot(orbitSpinVelocity, orbitTiltVelocity * ORBIT_RADIUS_TILT_WEIGHT);
+  let targetRadiusBoost = Math.min(combinedRadiusVelocity * ORBIT_RADIUS_VELOCITY_SCALE, ORBIT_RADIUS_BOOST_MAX);
+  orbitRadiusBoost = lerp(orbitRadiusBoost, targetRadiusBoost, ORBIT_RADIUS_BOOST_EASE);
+  let minorRadiusBoost = orbitRadiusBoost * (ORBIT_MINOR_RADIUS / ORBIT_MAJOR_RADIUS);
 
   let camDist = computeCameraDistance();
   let upX = sin(camYaw);
   let upZ = cos(camYaw);
-  let eyeX = -camDist * cos(camTiltX) * sin(camTiltZ);
-  let eyeY = camDist * cos(camTiltX) * cos(camTiltZ);
-  let eyeZ = camDist * sin(camTiltX);
+  let eyeX = 0;
+  let eyeY = camDist;
+  let eyeZ = 0;
   camera(eyeX, eyeY, eyeZ, 0, 0, 0, upX, 0, upZ);
   let camEye = { x: eyeX, y: eyeY, z: eyeZ };
   let camUp = { x: upX, y: 0, z: upZ };
@@ -914,50 +926,39 @@ function draw() {
   push();
   camera(0, camDist, 0, 0, 0, 0, 0, 0, 1);
   noLights();
-  let skyBrightness = lerp(SKYBOX_MIN_BRIGHTNESS * 255, 255, timeScale);
-  tint(skyBrightness);
-  texture(skyImg);
-  sphere(2000, 48, 48);
-  noTint();
-  pop();
-
-  push();
-  noStroke();
-  drawReflectiveOrb(blackHoleSize, 0, 0, 0, camEye, camLightDir, [0, 0, 0], 1, 0);
-  pop();
-
-  let blackHoleProj = worldToScreen(0, 0, 0, camEye, camUp);
-  if (blackHoleProj) {
-	blackHole.screenX = blackHoleProj.x;
-	blackHole.screenY = blackHoleProj.y;
-	blackHole.screenRadius = worldRadiusToScreenRadius(blackHoleSize / 2, blackHoleProj.depth);
-	blackHole.screenVisible = true;
-  } else {
-	blackHole.screenVisible = false;
+  if (bioRevealProgress < 0.999) {
+	let density = pixelDensity();
+	let maxMaskRadius = Math.sqrt(width * width + height * height) / 2 * density * SKY_MASK_OVERSHOOT;
+	shader(skyMaskShader);
+	skyMaskShader.setUniform('uSkyTex', skyImg);
+	skyMaskShader.setUniform('uBrightness', lerp(SKYBOX_MIN_BRIGHTNESS, 1, timeScale));
+	skyMaskShader.setUniform('uMaskCenter', [width * density / 2, height * density / 2]);
+	skyMaskShader.setUniform('uMaskRadius', bioRevealProgress * maxMaskRadius);
+	skyMaskShader.setUniform('uMaskSoftness', SKY_MASK_SOFTNESS * density);
+	sphere(2000, 48, 48);
+	resetShader();
   }
+  pop();
+
+  drawToggleDot(camEye, camUp, camDist);
 
   let majorRadius = ORBIT_MAJOR_RADIUS;
   let minorRadius = ORBIT_MINOR_RADIUS;
-  let tiltX = radians(38);
-  let tiltY = radians(28);
 
   for (let i = 0; i < projects.length; i++) {
 	let p = projects[i];
 
-	let major = majorRadius + (i - 3) * 6;
-	let minor = minorRadius + (i - 3) * 4;
+	let major = majorRadius + (i - 3) * 6 + orbitRadiusBoost;
+	let minor = minorRadius + (i - 3) * 4 + minorRadiusBoost;
 
 	let x = major * cos(p.orbitAngle + orbitSpinAngle);
 	let z = minor * sin(p.orbitAngle + orbitSpinAngle);
 	let y = 0;
 
-	let y1 = y * cos(tiltX) - z * sin(tiltX);
-	let z1 = y * sin(tiltX) + z * cos(tiltX);
-	let x1 = x;
-
-	let posX = x1 * cos(tiltY) + z1 * sin(tiltY);
-	let posY = y1;
-	let posZ = -x1 * sin(tiltY) + z1 * cos(tiltY);
+	let worldPos = mat3Apply(orbitRotationMatrix, x, y, z);
+	let posX = worldPos.x;
+	let posY = worldPos.y;
+	let posZ = worldPos.z;
 
 	push();
 	translate(posX, posY, posZ);
@@ -969,61 +970,121 @@ function draw() {
 	let visitedTarget = p.visited ? VISITED_TINT_OPACITY[i] : 0;
 	p.visitedMix = lerp(p.visitedMix, visitedTarget, VISITED_MIX_EASE);
 
-	if (p.lightMix > 0.01) {
-	  let dx = camEye.x - posX, dy = camEye.y - posY, dz = camEye.z - posZ;
-	  let dLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
-	  dx /= dLen; dy /= dLen; dz /= dLen;
-
-	  let refX = 0, refY = 0, refZ = 1;
-	  if (Math.abs(dz) > 0.9) { refX = 1; refY = 0; refZ = 0; }
-
-	  let rightX = refY * dz - refZ * dy;
-	  let rightY = refZ * dx - refX * dz;
-	  let rightZ = refX * dy - refY * dx;
-	  let rLen = Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
-	  rightX /= rLen; rightY /= rLen; rightZ /= rLen;
-
-	  let upX2 = dy * rightZ - dz * rightY;
-	  let upY2 = dz * rightX - dx * rightZ;
-	  let upZ2 = dx * rightY - dy * rightX;
-
-	  let rayOffset = p.size * HALO_DEPTH_OFFSET_RATIO;
-	  let newDist = dLen + rayOffset;
-	  let sizeCompensation = newDist / dLen;
-
-	  push();
-	  noStroke();
-	  noLights();
-	  translate(-dx * rayOffset, -dy * rayOffset, -dz * rayOffset);
-	  applyMatrix(
-		rightX, upX2, dx, 0,
-		rightY, upY2, dy, 0,
-		rightZ, upZ2, dz, 0,
-		0, 0, 0, 1
-	  );
-	  let haloColor = HALO_COLOR_DEFAULT;
-	  fill(haloColor[0], haloColor[1], haloColor[2], 255 * p.lightMix);
-	  circle(0, 0, p.size * HALO_SCALE * sizeCompensation);
-	  pop();
-	}
-
 	drawReflectiveOrb(p.size, posX, posY, posZ, camEye, camLightDir, VISITED_TINT_COLORS[i], p.visitedMix);
 	pop();
+
+	p.posX = posX;
+	p.posY = posY;
+	p.posZ = posZ;
 
 	let proj = worldToScreen(posX, posY, posZ, camEye, camUp);
 	if (proj) {
 	  p.screenX = proj.x;
 	  p.screenY = proj.y;
 	  p.screenRadius = worldRadiusToScreenRadius(p.size / 2, proj.depth);
+	  p.screenDepth = proj.depth;
 	  p.screenVisible = true;
 	} else {
 	  p.screenVisible = false;
 	}
 	p.orbitAngle += p.orbitSpeed * timeScale * orbitHoverScale;
   }
+
+  // Halos are drawn in their own pass, after every orb's opaque sphere is already in the
+  // depth buffer. That way each halo's normal depth TEST correctly checks it against every
+  // orb's real depth (not just the orb it belongs to, and regardless of loop order), so it's
+  // properly hidden behind whichever orbs are actually nearer the camera. Depth WRITE stays
+  // off for halos since nothing else draws after them: this avoids a translucent, nearly-
+  // faded-out halo from ever blocking anything (the cause of the old black-trail glitch),
+  // while still letting them draw correctly over anything farther away.
+  for (let i = 0; i < projects.length; i++) {
+	let p = projects[i];
+	if (p.lightMix === undefined || p.lightMix <= 0.01 || !p.screenVisible) continue;
+
+	let posX = p.posX, posY = p.posY, posZ = p.posZ;
+
+	let dx = camEye.x - posX, dy = camEye.y - posY, dz = camEye.z - posZ;
+	let dLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+	dx /= dLen; dy /= dLen; dz /= dLen;
+
+	let refX = 0, refY = 0, refZ = 1;
+	if (Math.abs(dz) > 0.9) { refX = 1; refY = 0; refZ = 0; }
+
+	let rightX = refY * dz - refZ * dy;
+	let rightY = refZ * dx - refX * dz;
+	let rightZ = refX * dy - refY * dx;
+	let rLen = Math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
+	rightX /= rLen; rightY /= rLen; rightZ /= rLen;
+
+	let upX2 = dy * rightZ - dz * rightY;
+	let upY2 = dz * rightX - dx * rightZ;
+	let upZ2 = dx * rightY - dy * rightX;
+
+	let rayOffset = p.size * HALO_DEPTH_OFFSET_RATIO;
+	let newDist = dLen + rayOffset;
+	let sizeCompensation = newDist / dLen;
+
+	push();
+	translate(posX, posY, posZ);
+	noStroke();
+	noLights();
+	translate(-dx * rayOffset, -dy * rayOffset, -dz * rayOffset);
+	applyMatrix(
+	  rightX, upX2, dx, 0,
+	  rightY, upY2, dy, 0,
+	  rightZ, upZ2, dz, 0,
+	  0, 0, 0, 1
+	);
+	let haloColor = HALO_COLOR_DEFAULT;
+	fill(haloColor[0], haloColor[1], haloColor[2], 255 * p.lightMix);
+	drawingContext.depthMask(false);
+	circle(0, 0, p.size * HALO_SCALE * sizeCompensation);
+	drawingContext.depthMask(true);
+	pop();
+  }
+
   updateHoverCursor();
   updateOrbLabel();
   updateOrbLinkHitzone();
+  updateDotOcclusion(camDist);
+}
+
+// The toggle dot always sits at world origin, dead center of the screen. When an orb currently
+// orbits in front of it (closer to the camera) and its screen circle overlaps the dot's ACTUAL
+// VISIBLE silhouette, that orb is visually covering the dot: clicks/hovers there should hit the
+// orb, not the dot. The dot's DOM hit element normally sits above the canvas in stacking order
+// (so it's clickable at all), so disable its pointer events for as long as an occluding orb is
+// over it, letting the click/hover fall through to the orb's own hit-testing underneath.
+//
+// This check deliberately uses the dot's real on-screen visual radius here (not its much-larger
+// DOM hit radius from computeDotHitDiameter()): using the inflated hit radius made the dot look
+// "occluded" -- and get its pointer-events disabled -- whenever an orb merely passed nearby,
+// even while still fully visible and not actually covered. Since an orb's own hit radius
+// (computeHitRadius) is already generously bigger than its visual size, any point where the dot
+// is genuinely covered is still safely within the orb's own hit zone, so clicks there properly
+// fall through to the orb with no dead zone in between.
+function updateDotOcclusion(camDist) {
+  if (!bioCloseDotEl) return;
+
+  let dotVisualRadius = toggleDotDiameterPx / 2;
+  let centerX = width / 2;
+  let centerY = height / 2;
+  let occluded = false;
+
+  for (let i = 0; i < projects.length; i++) {
+	let p = projects[i];
+	if (!p.screenVisible || p.screenDepth >= camDist) continue;
+
+	let dx = p.screenX - centerX;
+	let dy = p.screenY - centerY;
+	let dist = Math.sqrt(dx * dx + dy * dy);
+	if (dist < p.screenRadius + dotVisualRadius) {
+	  occluded = true;
+	  break;
+	}
+  }
+
+  bioCloseDotEl.style.pointerEvents = occluded ? 'none' : '';
 }
 
 function updateOrbLabel() {
@@ -1093,11 +1154,6 @@ function updateOrbLinkHitzone() {
 }
 
 function handleTap(px, py) {
-  if (blackHole.screenVisible && hitTestPoint(px, py, blackHole.screenX, blackHole.screenY, computeHitRadius(blackHole))) {
-	openBioOverlay();
-	return;
-  }
-
   let hitIndex = findProjectHitIndex(px, py);
 
   if (hitIndex !== -1 && hitIndex === selectedIndex) {
@@ -1130,8 +1186,6 @@ function beginCameraDrag(x, y) {
   dragMoved = false;
   dragStartX = x;
   dragStartY = y;
-  camTiltXBase = camTiltX;
-  camTiltZBase = camTiltZ;
 }
 
 function finalizeTap(x, y) {
@@ -1145,8 +1199,7 @@ function finalizeTap(x, y) {
 }
 
 function mousePressed(event) {
-  if (bioOverlayOpen) return false;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
   beginCameraDrag(mouseX, mouseY);
   return false;
 }
@@ -1154,15 +1207,13 @@ function mousePressed(event) {
 function mouseReleased(event) {
   if (!isDraggingCamera) return false;
   isDraggingCamera = false;
-  if (bioOverlayOpen) return false;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
   if (!dragMoved) finalizeTap(mouseX, mouseY);
   return false;
 }
 
 function touchStarted(event) {
-  if (bioOverlayOpen) return false;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
   if (touches.length > 0) {
 	beginCameraDrag(touches[0].x, touches[0].y);
 	lastTouchDragX = touches[0].x;
@@ -1172,76 +1223,12 @@ function touchStarted(event) {
 }
 
 function touchEnded(event) {
-  if (bioOverlayOpen) { isDraggingCamera = false; return false; }
   if (!isDraggingCamera) return false;
   isDraggingCamera = false;
   lastTouchDragX = null;
   lastTouchDragY = null;
-  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link')) return false;
+  if (event && event.target && event.target.closest && event.target.closest('#label, #orb-link, #bio-close-dot, .bio-overlay-links a')) return false;
   if (!dragMoved) finalizeTap(dragStartX, dragStartY);
   return false;
 }
 
-function applyKeyboardFocus() {
-  selectedIndex = (keyboardFocusIndex >= 0 && keyboardFocusIndex < projects.length) ? keyboardFocusIndex : -1;
-
-  let emailIndex = projects.length + 1;
-  let instagramIndex = projects.length + 2;
-
-  if (keyboardFocusIndex === projects.length) {
-	openBioOverlay();
-  } else if (keyboardFocusIndex !== emailIndex && keyboardFocusIndex !== instagramIndex) {
-	closeBioOverlay();
-  }
-
-  if (!IS_TOUCH_DEVICE) {
-	bioLinks.forEach((a, i) => {
-	  let focused = (i === 0 && keyboardFocusIndex === emailIndex) || (i === 1 && keyboardFocusIndex === instagramIndex);
-	  setBioLinkActive(a, focused);
-	});
-  }
-}
-
-function resetKeyboardFocus() {
-  keyboardFocusIndex = -1;
-  selectedIndex = -1;
-  pendingOpenIndex = -1;
-  closeBioOverlay();
-  if (!IS_TOUCH_DEVICE) {
-	bioLinks.forEach((a) => setBioLinkActive(a, false));
-  }
-}
-
-function keyPressed() {
-  if (document.activeElement && document.activeElement !== document.body) return;
-
-  if (keyCode === 32) {
-	let maxIndex = projects.length + 2;
-	keyboardFocusIndex = (keyboardFocusIndex < maxIndex) ? keyboardFocusIndex + 1 : -1;
-	applyKeyboardFocus();
-	return false;
-  }
-
-  if (keyCode === ESCAPE) {
-	resetKeyboardFocus();
-	return false;
-  }
-
-  if (keyCode === ENTER || keyCode === RETURN) {
-	let emailIndex = projects.length + 1;
-	let instagramIndex = projects.length + 2;
-
-	if (keyboardFocusIndex >= 0 && keyboardFocusIndex < projects.length) {
-	  let p = projects[keyboardFocusIndex];
-	  openInNewTab(p.url);
-	  markProjectVisited(p);
-	} else if (keyboardFocusIndex === projects.length) {
-	  openBioOverlay();
-	} else if (keyboardFocusIndex === emailIndex) {
-	  navigateBioLink(bioLinks[0]);
-	} else if (keyboardFocusIndex === instagramIndex) {
-	  navigateBioLink(bioLinks[1]);
-	}
-	return false;
-  }
-}
