@@ -140,6 +140,13 @@ canvas {
   gap: 2lh;
 }
 
+/* While a project orb is selected (hovered on desktop, tapped on touch), the bio text and
+   links dim out of the way (opacity is driven from JS, eased at the same speed as the
+   skybox fade) and the links become unclickable until the orb is deselected. */
+#bio-overlay.orb-selected .bio-overlay-content a {
+  pointer-events: none;
+}
+
 .bio-overlay-links {
   margin-top: auto;
   display: flex;

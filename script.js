@@ -15,7 +15,7 @@ let skyMaskShader;
 
 let selectedIndex = -1;
 let timeScale = 1;
-const TIME_SCALE_EASE = 0.06;
+const TIME_SCALE_EASE = 0.08;
 let orbLabelEl;
 let orbLinkEl;
 
@@ -158,13 +158,14 @@ let loadDotTimer;
 }
 
 let bioOverlayEl;
+let bioOverlayContentEl;
 let bioCloseDotEl;
 let bioOverlayOpen = true;
 let bioLinks = [];
 let bioActiveLinks = new Set();
 
 const HALO_COLOR_DEFAULT = [255, 255, 255];
-const VISITED_TINT_HEX = ['#DD5CA9', '#1DAF3A', '#D93B2B', '#F1DF42', '#FF6A2A', '#965AF2', '#67B7EC'];
+const VISITED_TINT_HEX = ['#E950AB', '#1DAF3A', '#E81C1D', '#F1DF42', '#FF6A2A', '#9939EF', '#319DE5'];
 const VISITED_TINT_COLORS = VISITED_TINT_HEX.map(hexToRgb);
 const VISITED_TINT_OPACITY = [1, 1, 1, 1, 1, 1, 1];
 const VISITED_STORAGE_KEY = 'visitedProjectUrls';
@@ -314,6 +315,7 @@ function setup() {
   applyVisitedState();
 
   bioOverlayEl = document.getElementById('bio-overlay');
+  bioOverlayContentEl = document.querySelector('#bio-overlay .bio-overlay-content');
 
   bioCloseDotEl = document.getElementById('bio-close-dot');
   bioCloseDotEl.addEventListener('click', (e) => {
@@ -891,6 +893,19 @@ function updateHoverCursor() {
   document.body.style.cursor = hovering ? 'pointer' : 'default';
 }
 
+// While an orb is selected (hovered on desktop, tapped on touch), the bio text and links
+// should dim out of the way and stop being clickable, until the orb is deselected again.
+// Opacity is driven straight from timeScale (the same value, with the same easing, that
+// drives the skybox brightness fade), so both fades always move at identical speed.
+const BIO_DIM_OPACITY = 0.2;
+function updateBioDimmedState() {
+  if (!bioOverlayEl) return;
+  bioOverlayEl.classList.toggle('orb-selected', selectedIndex !== -1);
+  if (bioOverlayContentEl) {
+	bioOverlayContentEl.style.opacity = lerp(BIO_DIM_OPACITY, 1, timeScale);
+  }
+}
+
 function draw() {
   clear();
 
@@ -1047,22 +1062,25 @@ function draw() {
   updateOrbLabel();
   updateOrbLinkHitzone();
   updateDotOcclusion(camDist);
+  updateBioDimmedState();
 }
 
 // The toggle dot always sits at world origin, dead center of the screen. When an orb currently
-// orbits in front of it (closer to the camera) and its screen circle overlaps the dot's ACTUAL
-// VISIBLE silhouette, that orb is visually covering the dot: clicks/hovers there should hit the
-// orb, not the dot. The dot's DOM hit element normally sits above the canvas in stacking order
-// (so it's clickable at all), so disable its pointer events for as long as an occluding orb is
-// over it, letting the click/hover fall through to the orb's own hit-testing underneath.
+// orbits in front of it (closer to the camera) and its CLICKABLE hit zone reaches over the dot,
+// that orb should win any press there: clicks/hovers should hit the orb, not the dot, even if
+// the click lands just outside the orb's small visual sphere but still within the generous hit
+// radius (computeHitRadius) that normally registers as a click on that orb. The dot's DOM hit
+// element normally sits above the canvas in stacking order (so it's clickable at all), so
+// disable its pointer events for as long as an occluding orb's hit zone is over it, letting the
+// click/hover fall through to the orb's own hit-testing underneath.
 //
-// This check deliberately uses the dot's real on-screen visual radius here (not its much-larger
-// DOM hit radius from computeDotHitDiameter()): using the inflated hit radius made the dot look
-// "occluded" -- and get its pointer-events disabled -- whenever an orb merely passed nearby,
-// even while still fully visible and not actually covered. Since an orb's own hit radius
-// (computeHitRadius) is already generously bigger than its visual size, any point where the dot
-// is genuinely covered is still safely within the orb's own hit zone, so clicks there properly
-// fall through to the orb with no dead zone in between.
+// The orb side of this check intentionally uses its real (larger) hit radius rather than its
+// visual radius, so "pressing near/on the orb" is judged the same way real clicks are judged.
+// The dot side still uses its own real on-screen VISUAL radius (not its much-larger DOM hit
+// radius from computeDotHitDiameter()): inflating the dot's side too would make it look
+// "occluded" whenever an orb merely passed nearby well behind it, even while the dot is still
+// fully visible on top -- only an orb that is actually in front and close enough to matter
+// should ever steal the click.
 function updateDotOcclusion(camDist) {
   if (!bioCloseDotEl) return;
 
@@ -1078,7 +1096,7 @@ function updateDotOcclusion(camDist) {
 	let dx = p.screenX - centerX;
 	let dy = p.screenY - centerY;
 	let dist = Math.sqrt(dx * dx + dy * dy);
-	if (dist < p.screenRadius + dotVisualRadius) {
+	if (dist < computeHitRadius(p) + dotVisualRadius) {
 	  occluded = true;
 	  break;
 	}
