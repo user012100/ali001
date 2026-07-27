@@ -24,7 +24,7 @@ body.preload-lock {
 
 #hero {
   position: relative;
-  height: 100vh;
+  height: var(--app-height, 100vh);
   min-height: 36rem;
   overflow: hidden;
 }
@@ -235,7 +235,7 @@ canvas {
   position: relative;
   z-index: 1;
   min-height: 36rem;
-  height: 100vh;
+  height: var(--app-height, 100vh);
   padding: clamp(1rem, 2.2vw, 2rem);
   box-sizing: border-box;
   background: #000000;
@@ -290,13 +290,13 @@ canvas {
 @media (width < 960px) {
   #hero {
     height: auto;
-    min-height: 100vh;
+    min-height: var(--app-height, 100vh);
     overflow: visible;
   }
 
   #page-content {
-    margin-top: -4.8rem;
-    padding-top: 0;
+    margin-top: 0;
+    padding-top: 1.25rem;
     padding-bottom: 0;
     min-height: 0;
     height: auto;
@@ -354,7 +354,7 @@ canvas {
     width: 100%;
     margin-left: 0;
     padding-left: 0;
-    padding-bottom: 1rem;
+    padding-bottom: 2.5rem;
     text-align: left;
   }
 
@@ -501,7 +501,7 @@ canvas {
 }
 
 .page-bio {
-  min-height: 100vh;
+  min-height: var(--app-height, 100vh);
   display: flex;
   flex-direction: column;
   justify-content: space-between;

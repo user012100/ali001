@@ -65,10 +65,13 @@ let orbitRadiusBoost = 0;
 let orbitRotationMatrix = mat3Multiply(mat3RotY((28 * Math.PI) / 180), mat3RotX((38 * Math.PI) / 180));
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-const MOBILE_VIEWPORT_JITTER_PX = 120;
 
 let stableViewportWidth = 0;
 let stableViewportHeight = 0;
+
+function applyStableViewportHeight(heightPx) {
+  document.documentElement.style.setProperty('--app-height', heightPx + 'px');
+}
 
 const SKYBOX_MIN_BRIGHTNESS = 0.5;
 const SKY_MASK_SOFTNESS = 1.5;
@@ -323,6 +326,7 @@ function setup() {
   let cnv = createCanvas(windowWidth, windowHeight, WEBGL);
   stableViewportWidth = window.innerWidth;
   stableViewportHeight = window.innerHeight;
+  applyStableViewportHeight(stableViewportHeight);
   let heroEl = document.getElementById('hero');
   if (heroEl) cnv.parent(heroEl);
   noStroke();
@@ -616,18 +620,16 @@ function windowResized() {
   let nextWidth = window.innerWidth;
   let nextHeight = window.innerHeight;
 
-  // On mobile browsers, the bottom/top browser UI can change innerHeight while scrolling.
-  // Ignore those transient height-only jitters so orb layout stays stable.
-  if (IS_TOUCH_DEVICE) {
-    let widthChanged = Math.abs(nextWidth - stableViewportWidth) > 0;
-    let heightDelta = Math.abs(nextHeight - stableViewportHeight);
-    if (!widthChanged && heightDelta > 0 && heightDelta < MOBILE_VIEWPORT_JITTER_PX) {
-      return;
-    }
+  // On touch browsers, Safari's collapsing/expanding browser chrome can fire resize
+  // events without a real layout change. Keep the canvas on the smaller observed
+  // height unless the width changes, which usually means a real layout change.
+  if (IS_TOUCH_DEVICE && nextWidth === stableViewportWidth) {
+    nextHeight = Math.min(stableViewportHeight || nextHeight, nextHeight);
   }
 
   stableViewportWidth = nextWidth;
   stableViewportHeight = nextHeight;
+  applyStableViewportHeight(stableViewportHeight);
   resizeCanvas(nextWidth, nextHeight);
   positionLoadDot();
   positionBioCloseDot();
