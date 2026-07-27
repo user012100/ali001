@@ -2,16 +2,36 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #000000;
-  touch-action: none;
+  touch-action: pan-y;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body.preload-lock {
+  overflow: hidden;
+  touch-action: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
+}
+
+#hero {
+  position: relative;
+  height: 100vh;
+  min-height: 36rem;
+  overflow: hidden;
 }
 
 canvas {
   display: block;
-  position: fixed;
+  position: absolute;
   inset: 0;
   touch-action: none;
   outline: none;
@@ -26,7 +46,7 @@ canvas {
 }
 
 #load-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: #000000;
   z-index: 30;
@@ -34,7 +54,7 @@ canvas {
   --reveal-radius: 0%;
   mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
   -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent var(--reveal-radius), #000 calc(var(--reveal-radius) + 1%));
-  transition: opacity 0.9s ease, --reveal-radius 1.6s ease;
+  transition: opacity 0.45s ease, --reveal-radius 0.8s ease;
   pointer-events: none;
 }
 
@@ -47,15 +67,15 @@ canvas {
 }
 
 #load-dot {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   z-index: 31;
   border-radius: 50%;
   background: #FFFFFF;
   opacity: 0;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  animation: load-dot-pulse 8.7s ease-in-out infinite;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  animation: load-dot-pulse 4.35s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -73,7 +93,7 @@ canvas {
 }
 
 #orb-link {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   border-radius: 50%;
@@ -83,7 +103,7 @@ canvas {
 }
 
 #label {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   transform: translate(-50%, 0);
@@ -112,7 +132,7 @@ canvas {
 }
 
 #bio-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   color: #ffffff;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -157,7 +177,7 @@ canvas {
 
 .bio-overlay-content p {
   margin: 0;
-  font-size: clamp(2.75rem, 10vw, 6rem);
+  font-size: clamp(2.4rem, 8.6vw, 5.2rem);
   font-weight: 600;
   line-height: 1.1;
 }
@@ -194,7 +214,7 @@ canvas {
 }
 
 #bio-close-dot {
-  position: fixed;
+  position: absolute;
   top: 50%;
   left: 50%;
   width: 0;
@@ -209,4 +229,310 @@ canvas {
   z-index: 20;
   transform: translate(-50%, -50%);
   transition: width 0.9s ease, height 0.9s ease;
+}
+
+#page-content {
+  position: relative;
+  z-index: 1;
+  min-height: 36rem;
+  height: 100vh;
+  padding: clamp(1rem, 2.2vw, 2rem);
+  box-sizing: border-box;
+  background: #000000;
+  color: #6898C1;
+}
+
+#page-content > article {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 2lh;
+}
+
+#page-content-title,
+#selected-projects-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+#page-content > article > header p {
+  margin: 0;
+  font-size: clamp(2.4rem, 8.6vw, 5.2rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: #6898C1;
+  max-width: none;
+  width: 100%;
+  margin-left: auto;
+  text-align: right;
+}
+
+#page-content > article > header p .intro-keywords {
+  color: #e6e6e6;
+}
+
+
+#page-content section[aria-labelledby="selected-projects-title"] {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5lh;
+}
+
+@media (width < 960px) {
+  #page-content {
+    margin-top: -4.8rem;
+    padding-top: 0;
+    min-height: calc(100vh - 4.8rem);
+    height: calc(100vh - 4.8rem);
+  }
+
+  #page-content > article {
+    gap: 0.2lh;
+  }
+
+  #page-content > article > header p {
+    margin-left: 0;
+    text-align: left;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] {
+    flex: 1 1 auto;
+    margin-top: 0;
+    justify-content: center;
+    gap: 0.25lh;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] h3 {
+    line-height: 1.1;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] p {
+    display: none;
+    transition: none;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] > article:hover p,
+  #page-content section[aria-labelledby="selected-projects-title"] > article:focus-within p {
+    display: none;
+    margin-top: 0;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-0.4rem);
+    color: #6898C1;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] h3 a:hover,
+  #page-content section[aria-labelledby="selected-projects-title"] h3 a:focus-visible,
+  #page-content section[aria-labelledby="selected-projects-title"] > article:hover h3 a,
+  #page-content section[aria-labelledby="selected-projects-title"] > article:focus-within h3 a {
+    color: #6898C1;
+  }
+
+  #page-content section[aria-labelledby="main-contact-heading"] {
+    margin-top: 0;
+    margin-bottom: 0;
+    align-self: flex-start;
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+    text-align: left;
+  }
+
+  #page-content section[aria-labelledby="main-contact-heading"] address,
+  #page-content section[aria-labelledby="main-contact-heading"] .page-link-list,
+  #page-content section[aria-labelledby="main-contact-heading"] .page-link-list li {
+    width: 100%;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
+  #page-content section[aria-labelledby="main-contact-heading"] .page-link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5lh;
+    align-items: flex-start;
+  }
+
+  #page-content section[aria-labelledby="main-contact-heading"] a {
+    display: inline-block;
+    text-align: left;
+  }
+}
+
+@media (width >= 960px) {
+  #page-content > article {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto 1fr;
+    column-gap: clamp(2rem, 4vw, 5rem);
+    row-gap: 2lh;
+    align-content: stretch;
+  }
+
+  #page-content > article > header {
+    grid-column: 1 / -1;
+  }
+
+  #page-content section[aria-labelledby="selected-projects-title"] {
+    grid-column: 1;
+    align-self: end;
+  }
+
+  #page-content section[aria-labelledby="main-contact-heading"] {
+    grid-column: 2;
+    align-self: end;
+    justify-self: end;
+  }
+
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] > article {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] h3 {
+  margin: 0;
+  font-size: clamp(1.45rem, 3.1vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: #6898C1;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] h3 a {
+  color: #6898C1;
+  text-decoration: none;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] h3 a:hover,
+#page-content section[aria-labelledby="selected-projects-title"] h3 a:focus-visible {
+  color: #e6e6e6;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] p {
+  margin: 0;
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  line-height: 1.3;
+  color: #6898C1;
+  max-width: 82ch;
+  margin-top: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-0.4rem);
+  transition: max-height 0.62s ease-in-out, opacity 0.45s ease-in-out, transform 0.62s ease-in-out, margin-top 0.62s ease-in-out;
+  will-change: max-height, opacity, transform, margin-top;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] p a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] > article:hover p,
+#page-content section[aria-labelledby="selected-projects-title"] > article:focus-within p {
+  margin-top: 0.35lh;
+  max-height: 16rem;
+  opacity: 1;
+  transform: translateY(0);
+  color: #e6e6e6;
+}
+
+#page-content section[aria-labelledby="selected-projects-title"] > article:hover h3 a,
+#page-content section[aria-labelledby="selected-projects-title"] > article:focus-within h3 a {
+  color: #e6e6e6;
+}
+
+#page-content section[aria-labelledby="main-contact-heading"] {
+  margin-top: 1.2lh;
+}
+
+#page-content section[aria-labelledby="main-contact-heading"] .page-link-list {
+  align-items: flex-end;
+}
+
+#page-content section[aria-labelledby="main-contact-heading"] a {
+  color: #6898C1;
+  text-decoration: none;
+  font-size: clamp(1.45rem, 3.1vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+#page-content section[aria-labelledby="main-contact-heading"] a:hover,
+#page-content section[aria-labelledby="main-contact-heading"] a:focus-visible {
+  color: #e6e6e6;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.page-bio {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2lh;
+}
+
+.page-bio-text {
+  margin: 0;
+  font-size: clamp(2.4rem, 8.6vw, 5.2rem);
+  font-weight: 600;
+  line-height: 1.1;
+  color: #6898C1;
+  max-width: 20ch;
+}
+
+.page-links-block {
+  display: block;
+}
+
+.page-link-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5lh;
+}
+
+#page-content a {
+  color: #6898C1;
+  text-decoration: none;
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+  line-height: 1.2;
+}
+
+#page-content a:hover,
+#page-content a:focus-visible {
+  color: #e6e6e6;
+}
+
+#page-content address {
+  font-style: normal;
 }

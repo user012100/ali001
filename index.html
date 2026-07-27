@@ -4,46 +4,118 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Ali Salifov</title>
-  <meta name="description" content="Ali Salifov is a multimedia artist based in New York. Portfolio of projects including XD Magazine, Joanna, [untold], Gossip, Persistence of Color, Cult of the Ugly, and Nick Lambrou.">
+  <meta name="description" content="Ali Salifov is a multimedia artist and designer based in New York. Portfolio includes XD Magazine, Joanna, Nick Lambrou, [untold], and Persistence of Color.">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Ali Salifov",
+  "url": "https://ali001.com",
+  "jobTitle": "Multimedia Artist and Designer",
+  "description": "Multimedia artist and designer based in New York. Working across web, print, images and sound.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "New York",
+    "addressRegion": "NY",
+    "addressCountry": "US"
+  },
+  "sameAs": [
+    "https://www.linkedin.com/in/ali00100",
+    "https://www.instagram.com/ali00100001/",
+    "https://github.com/user012100",
+    "https://xdmag.com"
+  ],
+  "alumniOf": {
+    "@type": "CollegeOrUniversity",
+    "name": "Parsons School of Design"
+  },
+  "knowsAbout": ["multimedia art", "web design", "print design", "creative direction", "XD Magazine"]
+}
+  </script>
 </head>
 <body>
-  <div id="load-overlay"></div>
-  <div id="load-dot"></div>
-  <template id="canvas-fallback-content">
-    <h1>Ali Salifov</h1>
-    <p>Ali Salifov is a multimedia artist based in New York.</p>
-    <nav aria-label="Contact">
-      <ul id="contact-list">
-        <li><a href="mailto:work@ali001.com">Email</a></li>
-        <li><a href="https://instagram.com/ali00100001/" rel="noopener">Instagram</a></li>
-      </ul>
-    </nav>
-    <nav aria-label="Projects">
-      <ul id="project-list">
-        <li><a href="https://xdmag.com" rel="noopener">XD Magazine</a></li>
-        <li><a href="https://joannaistanbul.com" rel="noopener">Joanna</a></li>
-        <li><a href="untold/" rel="noopener">[untold]</a></li>
-        <li><a href="gossip/" rel="noopener">Gossip</a></li>
-        <li><a href="persistence-of-color/" rel="noopener">Persistence of Color</a></li>
-        <li><a href="cult-of-the-ugly/" rel="noopener">Cult of the Ugly</a></li>
-        <li><a href="https://nlambrou.com" rel="noopener">Nick Lambrou</a></li>
-      </ul>
-    </nav>
-  </template>
-  <a id="orb-link" href="#" rel="noopener"></a>
-  <a id="label" href="#" rel="noopener"></a>
-  <div id="bio-overlay" aria-hidden="true">
-    <div class="bio-overlay-content">
-      <p class="bio-text"><span class="bio-name">Ali Salifov</span> is a multimedia artist based in New York.</p>
-      <div class="bio-overlay-links">
-        <p><a href="mailto:work@ali001.com">Email</a></p>
-        <p><a href="https://instagram.com/ali00100001/" rel="noopener">Instagram</a></p>
+  <section id="hero" aria-label="Interactive portfolio hero">
+    <div id="load-overlay"></div>
+    <div id="load-dot"></div>
+    <template id="canvas-fallback-content">
+      <article class="page-bio" aria-labelledby="page-bio-title">
+        <header>
+          <h1 id="page-bio-title" class="sr-only">Ali Salifov</h1>
+          <p class="page-bio-text"><span class="bio-name">Ali Salifov</span> is a multimedia artist based in New York.</p>
+        </header>
+
+        <section class="page-links-block" aria-labelledby="projects-heading">
+          <h2 id="projects-heading" class="sr-only">Projects</h2>
+          <ul id="project-list" class="page-link-list">
+            <li><a href="https://xdmag.com" rel="noopener">XD Magazine</a></li>
+            <li><a href="https://joannaistanbul.com" rel="noopener">Joanna</a></li>
+            <li><a href="https://nlambrou.com" rel="noopener">Nick Lambrou</a></li>
+            <li><a href="untold/" rel="noopener">[untold]</a></li>
+            <li><a href="persistence-of-color/" rel="noopener">Persistence of Color</a></li>
+          </ul>
+        </section>
+      </article>
+    </template>
+    <a id="orb-link" href="#" rel="noopener"></a>
+    <a id="label" href="#" rel="noopener"></a>
+    <div id="bio-overlay" aria-hidden="true">
+      <div class="bio-overlay-content">
+        <p class="bio-text"><span class="bio-name">Ali Salifov</span> is a multimedia artist based in New York.</p>
       </div>
     </div>
-  </div>
-  <button id="bio-close-dot" type="button" aria-label="Toggle bio"></button>
+    <button id="bio-close-dot" type="button" aria-label="Toggle bio"></button>
+  </section>
+
+  <main id="page-content" aria-label="Portfolio content">
+    <article aria-labelledby="page-content-title">
+      <header>
+        <h1 id="page-content-title">Ali Salifov</h1>
+        <p><span class="sr-only">Ali Salifov is a multimedia artist and designer based in New York City.</span>Working across <span class="intro-keywords">web,</span> <span class="intro-keywords">print,</span> <span class="intro-keywords">images</span> <span class="intro-keywords">and</span> <span class="intro-keywords">sound.</span></p>
+      </header>
+
+      <section aria-labelledby="selected-projects-title">
+        <h2 id="selected-projects-title">Selected Projects</h2>
+
+        <article>
+          <h3><a href="https://xdmag.com" rel="noopener">XD Magazine</a></h3>
+          <p><a href="https://xdmag.com" rel="noopener">XD is a print magazine centered on artists in New York City whose work prioritizes intuition and human touch.</a></p>
+        </article>
+
+        <article>
+          <h3><a href="https://joannaistanbul.com" rel="noopener">Joanna</a></h3>
+          <p><a href="https://joannaistanbul.com" rel="noopener">A commercial website designed and developed for Joanna, a four-floor venue located in Istanbul, Turkey.</a></p>
+        </article>
+
+        <article>
+          <h3><a href="https://nlambrou.com" rel="noopener">Nick Lambrou</a></h3>
+          <p><a href="https://nlambrou.com" rel="noopener">A portfolio website designed and developed for Nick Lambrou, a film producer, containing photo and video projects.</a></p>
+        </article>
+
+        <article>
+          <h3><a href="untold/" rel="noopener">[untold]</a></h3>
+          <p><a href="untold/" rel="noopener">[untold] is a dedicated space for your creative writing, whether it's poetry, lyrics or anything in between.</a></p>
+        </article>
+
+        <article>
+          <h3><a href="persistence-of-color/" rel="noopener">Persistence of Color</a></h3>
+          <p><a href="persistence-of-color/" rel="noopener">Persistence of Color is a project that curates three readings as a digital binding on a website, involving sketching in code and developing a design system.</a></p>
+        </article>
+      </section>
+
+      <section aria-labelledby="main-contact-heading">
+        <h2 id="main-contact-heading" class="sr-only">Contact</h2>
+        <address>
+          <ul class="page-link-list">
+            <li><a href="mailto:work@ali001.com">Email</a></li>
+            <li><a href="https://instagram.com/ali00100001/" rel="noopener">Instagram</a></li>
+          </ul>
+        </address>
+      </section>
+    </article>
+  </main>
+
   <script src="script.js"></script>
 </body>
 </html>

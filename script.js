@@ -1,12 +1,20 @@
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, orbitSpeed: 0.0015, size: 74 },
   { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, orbitSpeed: 0.0015, size: 74 },
+  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, orbitSpeed: 0.0015, size: 74 },
   { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, orbitSpeed: 0.0015, size: 74 },
-  { title: "Gossip", year: 2026, url: "gossip/", orbitAngle: 2.7, orbitSpeed: 0.0015, size: 74 },
-  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, orbitSpeed: 0.0015, size: 74 },
-  { title: "Cult of the Ugly", year: 2025, url: "cult-of-the-ugly/", orbitAngle: 0.9, orbitSpeed: 0.0015, size: 74 },
-  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, orbitSpeed: 0.0015, size: 74 }
+  { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, orbitSpeed: 0.0015, size: 74 }
 ];
+
+function distributeOrbitAnglesEvenly(list, startAngle) {
+  if (!Array.isArray(list) || list.length === 0) return;
+  let step = (Math.PI * 2) / list.length;
+  for (let i = 0; i < list.length; i++) {
+    list[i].orbitAngle = startAngle - (step * i);
+  }
+}
+
+distributeOrbitAnglesEvenly(projects, 5.4);
 
 let skyImg;
 let citrusImg;
@@ -57,6 +65,10 @@ let orbitRadiusBoost = 0;
 let orbitRotationMatrix = mat3Multiply(mat3RotY((28 * Math.PI) / 180), mat3RotX((38 * Math.PI) / 180));
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+const MOBILE_VIEWPORT_JITTER_PX = 120;
+
+let stableViewportWidth = 0;
+let stableViewportHeight = 0;
 
 const SKYBOX_MIN_BRIGHTNESS = 0.5;
 const SKY_MASK_SOFTNESS = 1.5;
@@ -123,9 +135,21 @@ function sizeLoadDot() {
 }
 sizeLoadDot();
 
+function positionLoadDot() {
+  let dot = document.getElementById('load-dot');
+  if (!dot) return;
+  let centerX = (typeof width !== 'undefined' && width > 0) ? width : window.innerWidth;
+  let centerY = (typeof height !== 'undefined' && height > 0) ? height : window.innerHeight;
+  dot.style.left = `${centerX / 2}px`;
+  dot.style.top = `${centerY / 2}px`;
+}
+positionLoadDot();
+
+document.body.classList.add('preload-lock');
+
 function computeDotHitDiameter() {
   let visualRadius = computeLoadDotDiameter() / 2;
-  let hitRadius = IS_TOUCH_DEVICE ? Math.max(visualRadius * 1.1, 36) * 1.5 : Math.max(visualRadius * 1.6, 44);
+  let hitRadius = IS_TOUCH_DEVICE ? Math.max((Math.max(visualRadius * 1.1, 36) * 1.5) * 0.5, 36) : Math.max(visualRadius * 1.6, 44);
   return hitRadius * 2;
 }
 
@@ -136,10 +160,16 @@ function sizeDotHitElement(dot) {
   dot.style.height = diameter + 'px';
 }
 
+function positionBioCloseDot() {
+  if (!bioCloseDotEl) return;
+  bioCloseDotEl.style.left = `${width / 2}px`;
+  bioCloseDotEl.style.top = `${height / 2}px`;
+}
+
 const LOAD_DOT_DELAY_MS = 300;
 const MOBILE_ZOOM_DELAY_MS = 300;
-const DESKTOP_REVEAL_TRANSITION_DURATION = '1.6s';
-const MOBILE_REVEAL_TRANSITION_DURATION = '2.4s';
+const DESKTOP_REVEAL_TRANSITION_DURATION = '0.8s';
+const MOBILE_REVEAL_TRANSITION_DURATION = '1.2s';
 let loadTookLong = false;
 let loadDotTimer;
 {
@@ -153,12 +183,15 @@ let loadDotTimer;
 let bioOverlayEl;
 let bioOverlayContentEl;
 let bioCloseDotEl;
+let pageIntroEl;
+let pageProjectsEl;
+let pageContactEl;
 let bioOverlayOpen = true;
 let bioLinks = [];
 let bioActiveLinks = new Set();
 
 const HALO_COLOR_DEFAULT = [255, 255, 255];
-const VISITED_TINT_HEX = ['#E950AB', '#1DAF3A', '#E81C1D', '#F1DF42', '#FF6A2A', '#9939EF', '#319DE5'];
+const VISITED_TINT_HEX = ['#FF2AAE', '#1DAF3A', '#F1DF42', '#E81C1D', '#FF6A2A', '#9939EF', '#319DE5'];
 const VISITED_TINT_COLORS = VISITED_TINT_HEX.map(hexToRgb);
 const VISITED_TINT_OPACITY = [1, 1, 1, 1, 1, 1, 1];
 const VISITED_STORAGE_KEY = 'visitedProjectUrls';
@@ -280,9 +313,22 @@ function preload() {
   citrusImg = loadImage('assets/citrus_orchard_road_puresky.jpg');
 }
 
+function blockTouchScrollWhileOrbSelected(event) {
+  if (!IS_TOUCH_DEVICE) return;
+  if (selectedIndex === -1) return;
+  event.preventDefault();
+}
+
 function setup() {
   let cnv = createCanvas(windowWidth, windowHeight, WEBGL);
+  stableViewportWidth = window.innerWidth;
+  stableViewportHeight = window.innerHeight;
+  let heroEl = document.getElementById('hero');
+  if (heroEl) cnv.parent(heroEl);
   noStroke();
+  if (IS_TOUCH_DEVICE) {
+	document.addEventListener('touchmove', blockTouchScrollWhileOrbSelected, { passive: false });
+  }
   orbLinkEl = document.getElementById('orb-link');
   orbLinkEl.addEventListener('click', () => {
 	if (selectedIndex === -1) return;
@@ -303,12 +349,16 @@ function setup() {
   }, { passive: false });
   orbReflectShader = createShader(ORB_REFLECT_VERT, ORB_REFLECT_FRAG);
   skyMaskShader = createShader(SKY_MASK_VERT, SKY_MASK_FRAG);
-  moveFallbackContentIntoCanvas(cnv.canvas);
+  renderPageContentFromTemplate();
   syncProjectsFromDom();
   applyVisitedState();
+  bindPageProjectLinks();
 
   bioOverlayEl = document.getElementById('bio-overlay');
   bioOverlayContentEl = document.querySelector('#bio-overlay .bio-overlay-content');
+  pageIntroEl = document.querySelector('#page-content > article > header p');
+  pageProjectsEl = document.querySelector('#page-content section[aria-labelledby="selected-projects-title"]');
+  pageContactEl = document.querySelector('#page-content section[aria-labelledby="main-contact-heading"]');
 
   bioCloseDotEl = document.getElementById('bio-close-dot');
   bioCloseDotEl.addEventListener('click', (e) => {
@@ -347,6 +397,8 @@ function setup() {
   settleBioOpenState();
   showBioCloseDotInstantly();
   applyBioRevealCss();
+
+  positionLoadDot();
 
   fadeOutLoadOverlay();
 }
@@ -414,24 +466,29 @@ function fadeOutLoadOverlay() {
   clearTimeout(loadDotTimer);
   let overlay = document.getElementById('load-overlay');
   let dot = document.getElementById('load-dot');
-  if (!overlay) return;
-  let shouldZoomOut = loadTookLong;
+  if (!overlay) {
+    document.body.classList.remove('preload-lock');
+    return;
+  }
   if (dot) {
 	dot.style.transform = getComputedStyle(dot).transform;
 	dot.style.animation = 'none';
 	dot.offsetHeight;
-	dot.style.transitionDuration = shouldZoomOut
-	  ? (IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION)
-	  : '0.9s';
+  dot.style.transitionDuration = IS_TOUCH_DEVICE
+    ? MOBILE_REVEAL_TRANSITION_DURATION
+    : DESKTOP_REVEAL_TRANSITION_DURATION;
 	dot.style.opacity = 0;
 	dot.style.transform = 'translate(-50%, -50%) scale(0)';
   }
-  if (shouldZoomOut && IS_TOUCH_DEVICE) {
+  if (IS_TOUCH_DEVICE) {
 	overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
   }
   requestAnimationFrame(() => {
-	overlay.classList.add(shouldZoomOut ? 'revealed' : 'hidden');
-	overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  overlay.classList.add('revealed');
+  overlay.addEventListener('transitionend', () => {
+    document.body.classList.remove('preload-lock');
+    overlay.remove();
+  }, { once: true });
   });
 }
 
@@ -455,6 +512,7 @@ function settleBioOpenState() {
 
 function updateBioCloseDot() {
   sizeDotHitElement(bioCloseDotEl);
+  positionBioCloseDot();
   updateToggleDotVisual();
 }
 
@@ -490,10 +548,11 @@ function resetBioLinksAfterClose() {
   }
 }
 
-function moveFallbackContentIntoCanvas(canvasEl) {
+function renderPageContentFromTemplate() {
   let template = document.getElementById('canvas-fallback-content');
-  if (!template) return;
-  canvasEl.appendChild(template.content.cloneNode(true));
+  let contentRoot = document.getElementById('page-content');
+  if (!template || !contentRoot || contentRoot.children.length > 0) return;
+  contentRoot.appendChild(template.content.cloneNode(true));
 }
 
 function syncProjectsFromDom() {
@@ -506,6 +565,21 @@ function syncProjectsFromDom() {
 	  projects[i].year = parseInt(match[2], 10);
 	}
 	projects[i].url = link.getAttribute('href');
+  });
+}
+
+function bindPageProjectLinks() {
+  let contentRoot = document.getElementById('page-content');
+  if (!contentRoot) return;
+
+  contentRoot.addEventListener('click', (event) => {
+  let link = event.target.closest('section[aria-labelledby="selected-projects-title"] a');
+  if (!link) return;
+  let href = link.getAttribute('href');
+  let project = projects.find((item) => item.url === href);
+  if (!project) return;
+  markProjectVisited(project);
+  applyVisitedState();
   });
 }
 
@@ -539,7 +613,24 @@ function markProjectVisited(p) {
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+  let nextWidth = window.innerWidth;
+  let nextHeight = window.innerHeight;
+
+  // On mobile browsers, the bottom/top browser UI can change innerHeight while scrolling.
+  // Ignore those transient height-only jitters so orb layout stays stable.
+  if (IS_TOUCH_DEVICE) {
+    let widthChanged = Math.abs(nextWidth - stableViewportWidth) > 0;
+    let heightDelta = Math.abs(nextHeight - stableViewportHeight);
+    if (!widthChanged && heightDelta > 0 && heightDelta < MOBILE_VIEWPORT_JITTER_PX) {
+      return;
+    }
+  }
+
+  stableViewportWidth = nextWidth;
+  stableViewportHeight = nextHeight;
+  resizeCanvas(nextWidth, nextHeight);
+  positionLoadDot();
+  positionBioCloseDot();
 }
 
 function computeCameraDistance() {
@@ -848,8 +939,18 @@ const BIO_DIM_OPACITY = 0.2;
 function updateBioDimmedState() {
   if (!bioOverlayEl) return;
   bioOverlayEl.classList.toggle('orb-selected', selectedIndex !== -1);
+  let opacity = lerp(BIO_DIM_OPACITY, 1, timeScale);
   if (bioOverlayContentEl) {
-	bioOverlayContentEl.style.opacity = lerp(BIO_DIM_OPACITY, 1, timeScale);
+	bioOverlayContentEl.style.opacity = opacity;
+  }
+  if (pageIntroEl) {
+	pageIntroEl.style.opacity = opacity;
+  }
+  if (pageProjectsEl) {
+	pageProjectsEl.style.opacity = opacity;
+  }
+  if (pageContactEl) {
+	pageContactEl.style.opacity = opacity;
   }
 }
 
@@ -928,8 +1029,9 @@ function draw() {
 	if (p.visitedMix === undefined) p.visitedMix = 0;
 	let visitedTarget = p.visited ? VISITED_TINT_OPACITY[i] : 0;
 	p.visitedMix = lerp(p.visitedMix, visitedTarget, VISITED_MIX_EASE);
+  let tintMix = Math.max(p.lightMix, p.visitedMix);
 
-	drawReflectiveOrb(p.size, posX, posY, posZ, camEye, camLightDir, VISITED_TINT_COLORS[i], p.visitedMix);
+  drawReflectiveOrb(p.size, posX, posY, posZ, camEye, camLightDir, VISITED_TINT_COLORS[i], tintMix);
 	pop();
 
 	p.posX = posX;
@@ -1158,22 +1260,22 @@ function mouseReleased(event) {
 }
 
 function touchStarted(event) {
-  if (isInteractiveTarget(event)) return false;
+  if (isInteractiveTarget(event)) return true;
   if (touches.length > 0) {
 	beginCameraDrag(touches[0].x, touches[0].y);
 	lastTouchDragX = touches[0].x;
 	lastTouchDragY = touches[0].y;
   }
-  return false;
+  return true;
 }
 
 function touchEnded(event) {
-  if (!isDraggingCamera) return false;
+  if (!isDraggingCamera) return true;
   isDraggingCamera = false;
   lastTouchDragX = null;
   lastTouchDragY = null;
-  if (isInteractiveTarget(event)) return false;
+  if (isInteractiveTarget(event)) return true;
   if (!dragMoved) finalizeTap(dragStartX, dragStartY);
-  return false;
+  return true;
 }
 
