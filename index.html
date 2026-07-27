@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <script>
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+    window.addEventListener('DOMContentLoaded', function () {
+      window.scrollTo(0, 0);
+    });
+    window.addEventListener('load', function () {
+      window.scrollTo(0, 0);
+    });
+  </script>
   <title>Ali Salifov</title>
   <meta name="description" content="Ali Salifov is a multimedia artist and designer based in New York. Portfolio includes XD Magazine, Joanna, Nick Lambrou, [untold], and Persistence of Color.">
   <link rel="stylesheet" href="style.css">
