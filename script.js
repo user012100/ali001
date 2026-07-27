@@ -1156,7 +1156,7 @@ function applyLabelContent() {
 	return;
   }
 
-  orbLabelEl.textContent = `${p.title} (${p.year})`;
+  orbLabelEl.textContent = p.title;
   orbLabelEl.href = p.url;
   orbLabelEl.style.top = `${p.screenY + p.screenRadius + (IS_TOUCH_DEVICE ? 14 : 20)}px`;
   orbLabelEl.style.opacity = 1;
