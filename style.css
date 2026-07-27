@@ -269,7 +269,6 @@ canvas {
   font-weight: 600;
   line-height: 1.1;
   color: #6898C1;
-  max-width: none;
   width: 100%;
   margin-left: auto;
   text-align: right;
@@ -437,7 +436,7 @@ canvas {
   font-size: clamp(1.1rem, 2vw, 1.45rem);
   line-height: 1.3;
   color: #6898C1;
-  max-width: 82ch;
+  max-width: 65ch;
   margin-top: 0;
   max-height: 0;
   opacity: 0;
