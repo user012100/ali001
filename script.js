@@ -541,25 +541,11 @@ function escapeHtml(text) {
     .replace(/>/g, '&gt;');
 }
 
-function escapeHtmlAttribute(text) {
-  return (text || '')
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
 function renderIntroDynamicText(text) {
   if (!pageIntroDynamicEl) return;
   pageIntroCurrentText = text;
   let safeText = escapeHtml(text);
-  pageIntroDynamicEl.innerHTML = safeText.replace(INTRO_HIGHLIGHT_PATTERN, (match) => {
-    if (!pageIntroActiveHref) {
-      return `<span class="offwhite-highlight">${match}</span>`;
-    }
-    let safeHref = escapeHtmlAttribute(pageIntroActiveHref);
-    return `<a class="offwhite-highlight intro-highlight-link" href="${safeHref}" rel="noopener">${match}</a>`;
-  });
+  pageIntroDynamicEl.innerHTML = safeText.replace(INTRO_HIGHLIGHT_PATTERN, (match) => `<span class="offwhite-highlight">${match}</span>`);
 }
 
 function setTouchSelectionState(nextIndex) {

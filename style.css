@@ -218,20 +218,6 @@ canvas {
   color: #e6e6e6;
 }
 
-#intro-dynamic-text a.offwhite-highlight {
-  color: #e6e6e6;
-  text-decoration: none;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  text-transform: inherit;
-}
-
-#intro-dynamic-text a.offwhite-highlight:hover,
-#intro-dynamic-text a.offwhite-highlight:focus-visible {
-  color: #e6e6e6;
-}
-
 .bio-overlay-content a {
   color: #5998CF;
   text-decoration: none;
