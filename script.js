@@ -48,6 +48,7 @@ let dragStartX = 0;
 let dragStartY = 0;
 let lastTouchDragX = null;
 let lastTouchDragY = null;
+let touchStartY = 0;
 
 const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_TILT_DRAG_SENSITIVITY = 0.0035;
@@ -68,9 +69,39 @@ const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints >
 
 let stableViewportWidth = 0;
 let stableViewportHeight = 0;
+let initialViewportHeight = 0;
 
 function applyStableViewportHeight(heightPx) {
   document.documentElement.style.setProperty('--app-height', heightPx + 'px');
+}
+
+function applyViewportChromeInset(insetPx) {
+  document.documentElement.style.setProperty('--viewport-chrome-inset', Math.max(0, insetPx) + 'px');
+}
+
+// Mobile browsers report a shrunk window.innerHeight while their address bar/status
+// bar is visible, then grow the real viewport once the chrome auto-hides. Probe the
+// CSS large-viewport-height unit (100lvh) to get the full viewport size up front, so
+// the canvas always fills the whole screen instead of the temporarily reduced one.
+function measureLargeViewportHeight() {
+  if (typeof CSS === 'undefined' || !CSS.supports || !CSS.supports('height', '100lvh')) {
+    return window.innerHeight;
+  }
+  let probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:100lvh;visibility:hidden;pointer-events:none;';
+  document.body.appendChild(probe);
+  let h = probe.getBoundingClientRect().height;
+  probe.remove();
+  return h > 0 ? h : window.innerHeight;
+}
+
+function resolveStableViewportHeight() {
+  return IS_TOUCH_DEVICE ? Math.max(window.innerHeight, measureLargeViewportHeight()) : window.innerHeight;
+}
+
+function shouldShowOrbLabel() {
+  if (document.body.classList.contains('skybox-view')) return true;
+  return window.scrollY <= initialViewportHeight * 0.25;
 }
 
 const SKYBOX_MIN_BRIGHTNESS = 0.5;
@@ -119,7 +150,7 @@ function computeFitDistance(vFov, aspect) {
 
 function computeLoadDotDiameter() {
   let w = window.innerWidth;
-  let h = window.innerHeight;
+  let h = resolveStableViewportHeight();
   let vFov = 2 * Math.atan((h / 2) / 800);
   let dist = computeFitDistance(vFov, w / h);
   dist = Math.min(Math.max(dist, 500), 4000);
@@ -142,7 +173,7 @@ function positionLoadDot() {
   let dot = document.getElementById('load-dot');
   if (!dot) return;
   let centerX = (typeof width !== 'undefined' && width > 0) ? width : window.innerWidth;
-  let centerY = (typeof height !== 'undefined' && height > 0) ? height : window.innerHeight;
+  let centerY = (typeof height !== 'undefined' && height > 0) ? height : resolveStableViewportHeight();
   dot.style.left = `${centerX / 2}px`;
   dot.style.top = `${centerY / 2}px`;
 }
@@ -171,8 +202,9 @@ function positionBioCloseDot() {
 
 const LOAD_DOT_DELAY_MS = 300;
 const MOBILE_ZOOM_DELAY_MS = 300;
-const DESKTOP_REVEAL_TRANSITION_DURATION = '0.8s';
-const MOBILE_REVEAL_TRANSITION_DURATION = '1.2s';
+const DESKTOP_REVEAL_TRANSITION_DURATION = '0.55s';
+const MOBILE_REVEAL_TRANSITION_DURATION = '0.7s';
+const OVERLAY_FADE_TRANSITION_DURATION = '0.35s';
 let loadTookLong = false;
 let loadDotTimer;
 {
@@ -187,14 +219,59 @@ let bioOverlayEl;
 let bioOverlayContentEl;
 let bioCloseDotEl;
 let pageIntroEl;
+let pageIntroDynamicEl;
 let pageProjectsEl;
 let pageContactEl;
+let pageProjectTitleLinks = [];
+let pageProjectIntroTextByIndex = [];
+let pageProjectIntroHrefByIndex = [];
+let pageContactLinks = [];
+let domProjectHoverIndex = -1;
+let lastSelectedIndex = -2;
 let bioOverlayOpen = true;
 let bioLinks = [];
 let bioActiveLinks = new Set();
+const PAGE_INTRO_DEFAULT_TEXT = 'Working across web, print, images and sound.';
+const INTRO_HIGHLIGHT_PHRASES = [
+  'web, print, images and sound.',
+  'XD',
+  'print magazine',
+  'commercial website',
+  'Joanna',
+  'portfolio website',
+  'Nick Lambrou',
+  '[untold]',
+  'dedicated space',
+  'Persistence of Color',
+  'digital binding',
+  'collaborations',
+  'Instagram.',
+  'web projects'
+];
+const INTRO_HIGHLIGHT_PATTERN = new RegExp(
+  INTRO_HIGHLIGHT_PHRASES
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|'),
+  'gi'
+);
+const PAGE_INTRO_RESET_DELAY_MS = 70;
+const PAGE_INTRO_FADE_DURATION_MS = 360;
+const MOBILE_INTRO_TWO_TAP_RESET_MS = 2500;
+const INTRO_LOCK_BREAKPOINT_PX = 960;
+const INTRO_TWO_TAP_LINK_SELECTOR = '#page-content section[aria-labelledby="selected-projects-title"] h3 a, #page-content section[aria-labelledby="main-contact-heading"] a';
+let pageIntroResetTimer = null;
+let pageIntroTargetText = PAGE_INTRO_DEFAULT_TEXT;
+let pageIntroCurrentText = PAGE_INTRO_DEFAULT_TEXT;
+let pageIntroActiveHref = null;
+let pageIntroFadeToken = 0;
+let pageIntroSwapTimer = null;
+let mobileIntroArmedLink = null;
+let mobileIntroArmedTimer = null;
 
 const HALO_COLOR_DEFAULT = [255, 255, 255];
-const VISITED_TINT_HEX = ['#FF2AAE', '#1DAF3A', '#F1DF42', '#E81C1D', '#FF6A2A', '#9939EF', '#319DE5'];
+const VISITED_TINT_HEX = ['#EB3DA8', '#1DAF3A', '#9939EF', '#E81C1D', '#FF6A2A', '#F1DF42', '#319DE5'];
 const VISITED_TINT_COLORS = VISITED_TINT_HEX.map(hexToRgb);
 const VISITED_TINT_OPACITY = [1, 1, 1, 1, 1, 1, 1];
 const VISITED_STORAGE_KEY = 'visitedProjectUrls';
@@ -318,19 +395,46 @@ function preload() {
 
 function blockTouchScrollWhileOrbSelected(event) {
   if (!IS_TOUCH_DEVICE) return;
-  if (selectedIndex === -1) return;
-  event.preventDefault();
+  if (selectedIndex !== -1) {
+    event.preventDefault();
+    return;
+  }
+  if (!event.touches || event.touches.length !== 1) return;
+
+  let currentY = event.touches[0].clientY;
+  let pullingDown = currentY > touchStartY;
+  let atTop = window.scrollY <= 0;
+
+  // Block only top overscroll (including pull-to-refresh) while preserving
+  // native bottom overscroll behavior.
+  if (atTop && pullingDown) {
+    event.preventDefault();
+  }
+
+  touchStartY = currentY;
+}
+
+function rememberTouchStartY(event) {
+  if (!IS_TOUCH_DEVICE) return;
+  if (!event.touches || event.touches.length !== 1) return;
+  touchStartY = event.touches[0].clientY;
 }
 
 function setup() {
-  let cnv = createCanvas(windowWidth, windowHeight, WEBGL);
   stableViewportWidth = window.innerWidth;
-  stableViewportHeight = window.innerHeight;
+  stableViewportHeight = resolveStableViewportHeight();
+  initialViewportHeight = window.innerHeight;
+  // The gap recovered by measuring the full (large) viewport height instead of the
+  // shrunk one is roughly the height of the browser's status bar/chrome. Expose it
+  // so layout can pull content back up by that same amount.
+  applyViewportChromeInset(IS_TOUCH_DEVICE ? stableViewportHeight - initialViewportHeight : 0);
+  let cnv = createCanvas(stableViewportWidth, stableViewportHeight, WEBGL);
   applyStableViewportHeight(stableViewportHeight);
   let heroEl = document.getElementById('hero');
   if (heroEl) cnv.parent(heroEl);
   noStroke();
   if (IS_TOUCH_DEVICE) {
+	document.addEventListener('touchstart', rememberTouchStartY, { passive: true });
 	document.addEventListener('touchmove', blockTouchScrollWhileOrbSelected, { passive: false });
   }
   orbLinkEl = document.getElementById('orb-link');
@@ -353,16 +457,27 @@ function setup() {
   }, { passive: false });
   orbReflectShader = createShader(ORB_REFLECT_VERT, ORB_REFLECT_FRAG);
   skyMaskShader = createShader(SKY_MASK_VERT, SKY_MASK_FRAG);
-  renderPageContentFromTemplate();
-  syncProjectsFromDom();
   applyVisitedState();
   bindPageProjectLinks();
 
   bioOverlayEl = document.getElementById('bio-overlay');
   bioOverlayContentEl = document.querySelector('#bio-overlay .bio-overlay-content');
   pageIntroEl = document.querySelector('#page-content > article > header p');
+  pageIntroDynamicEl = document.getElementById('intro-dynamic-text');
   pageProjectsEl = document.querySelector('#page-content section[aria-labelledby="selected-projects-title"]');
   pageContactEl = document.querySelector('#page-content section[aria-labelledby="main-contact-heading"]');
+  if (pageIntroDynamicEl) {
+    pageIntroCurrentText = pageIntroDynamicEl.textContent || PAGE_INTRO_DEFAULT_TEXT;
+    renderIntroDynamicText(pageIntroCurrentText);
+  }
+  bindMobileTwoTapIntroReset();
+  setupProjectIntroHoverText();
+  setupContactIntroHoverText();
+  setupMobileListToggles();
+  lockIntroHeightOnSmallScreens();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(lockIntroHeightOnSmallScreens);
+  }
 
   bioCloseDotEl = document.getElementById('bio-close-dot');
   bioCloseDotEl.addEventListener('click', (e) => {
@@ -405,6 +520,300 @@ function setup() {
   positionLoadDot();
 
   fadeOutLoadOverlay();
+}
+
+function shuffledIndices(count) {
+  let indices = [];
+  for (let i = 0; i < count; i++) indices.push(i);
+  for (let i = indices.length - 1; i > 0; i--) {
+    let j = Math.floor(Math.random() * (i + 1));
+    let tmp = indices[i];
+    indices[i] = indices[j];
+    indices[j] = tmp;
+  }
+  return indices;
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function escapeHtmlAttribute(text) {
+  return (text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function renderIntroDynamicText(text) {
+  if (!pageIntroDynamicEl) return;
+  pageIntroCurrentText = text;
+  let safeText = escapeHtml(text);
+  pageIntroDynamicEl.innerHTML = safeText.replace(INTRO_HIGHLIGHT_PATTERN, (match) => {
+    if (!pageIntroActiveHref) {
+      return `<span class="offwhite-highlight">${match}</span>`;
+    }
+    let safeHref = escapeHtmlAttribute(pageIntroActiveHref);
+    return `<a class="offwhite-highlight intro-highlight-link" href="${safeHref}" rel="noopener">${match}</a>`;
+  });
+}
+
+function setTouchSelectionState(nextIndex) {
+  selectedIndex = nextIndex;
+  lastSelectedIndex = nextIndex;
+  pendingOpenIndex = -1;
+}
+
+function computeIntroFadeDuration(text) {
+  return PAGE_INTRO_FADE_DURATION_MS;
+}
+
+function animateIntroTextTo(targetText, linkHref) {
+  if (!pageIntroDynamicEl) return;
+  let nextHref = linkHref || null;
+  if (targetText === pageIntroTargetText && pageIntroCurrentText === targetText && pageIntroActiveHref === nextHref) return;
+  if (pageIntroResetTimer) {
+    clearTimeout(pageIntroResetTimer);
+    pageIntroResetTimer = null;
+  }
+  if (pageIntroSwapTimer) {
+    clearTimeout(pageIntroSwapTimer);
+    pageIntroSwapTimer = null;
+  }
+  pageIntroTargetText = targetText;
+  pageIntroFadeToken += 1;
+  let fadeToken = pageIntroFadeToken;
+  let fadeDurationMs = computeIntroFadeDuration(pageIntroCurrentText || '');
+  let swapDelayMs = fadeDurationMs;
+  let lockedWidthPx = Math.ceil(pageIntroDynamicEl.getBoundingClientRect().width);
+
+  pageIntroDynamicEl.style.display = 'inline-block';
+  pageIntroDynamicEl.style.width = `${lockedWidthPx}px`;
+  pageIntroDynamicEl.style.transitionDuration = `${fadeDurationMs}ms`;
+  pageIntroDynamicEl.style.opacity = '0';
+
+  pageIntroSwapTimer = window.setTimeout(() => {
+    if (fadeToken !== pageIntroFadeToken) return;
+    pageIntroActiveHref = nextHref;
+    renderIntroDynamicText(targetText);
+    requestAnimationFrame(() => {
+      if (fadeToken !== pageIntroFadeToken) return;
+      pageIntroDynamicEl.style.opacity = '1';
+    });
+  }, swapDelayMs);
+}
+
+function scheduleIntroTextReset() {
+  if (pageIntroResetTimer) {
+    clearTimeout(pageIntroResetTimer);
+  }
+  pageIntroResetTimer = setTimeout(() => {
+    pageIntroResetTimer = null;
+    animateIntroTextTo(PAGE_INTRO_DEFAULT_TEXT, null);
+  }, PAGE_INTRO_RESET_DELAY_MS);
+}
+
+function clearMobileIntroArmedLink() {
+  mobileIntroArmedLink = null;
+  if (mobileIntroArmedTimer) {
+    clearTimeout(mobileIntroArmedTimer);
+    mobileIntroArmedTimer = null;
+  }
+}
+
+function armMobileIntroLink(link) {
+  mobileIntroArmedLink = link;
+  if (mobileIntroArmedTimer) clearTimeout(mobileIntroArmedTimer);
+  mobileIntroArmedTimer = setTimeout(() => {
+    clearMobileIntroArmedLink();
+  }, MOBILE_INTRO_TWO_TAP_RESET_MS);
+}
+
+function bindMobileTwoTapIntroReset() {
+  if (!IS_TOUCH_DEVICE) return;
+
+  document.addEventListener('touchstart', (event) => {
+    if (!mobileIntroArmedLink) return;
+    if (!event.target || !event.target.closest) {
+      clearMobileIntroArmedLink();
+      return;
+    }
+    let tappedIntroLink = event.target.closest(INTRO_TWO_TAP_LINK_SELECTOR);
+    if (!tappedIntroLink) {
+      clearMobileIntroArmedLink();
+      animateIntroTextTo(PAGE_INTRO_DEFAULT_TEXT, null);
+    }
+  }, { passive: true });
+}
+
+function registerMobileIntroTwoTap(link, targetText, linkHref, selectionIndex = -1) {
+  if (!IS_TOUCH_DEVICE) return;
+
+  link.addEventListener('click', (event) => {
+    if (mobileIntroArmedLink === link) {
+      clearMobileIntroArmedLink();
+      return;
+    }
+
+    event.preventDefault();
+    setTouchSelectionState(selectionIndex);
+    animateIntroTextTo(targetText, linkHref);
+    armMobileIntroLink(link);
+  });
+}
+
+function setupProjectIntroHoverText() {
+  if (!pageProjectsEl || !pageIntroDynamicEl) return;
+
+  let projectArticles = Array.from(pageProjectsEl.querySelectorAll('article'));
+  pageProjectTitleLinks = [];
+  pageProjectIntroTextByIndex = [];
+  pageProjectIntroHrefByIndex = [];
+  projectArticles.forEach((article) => {
+    let titleLink = article.querySelector('h3 a');
+    let descriptionLink = article.querySelector('p a');
+    let targetText = (descriptionLink ? descriptionLink.textContent : '') || (titleLink ? titleLink.textContent : '');
+    targetText = targetText.trim();
+    let linkHref = titleLink ? (titleLink.getAttribute('href') || null) : null;
+    let projectIndex = projects.findIndex((item) => item.url === linkHref);
+    if (!targetText || !titleLink) return;
+
+    pageProjectTitleLinks.push(titleLink);
+    titleLink.dataset.projectIndex = String(projectIndex);
+    if (projectIndex !== -1) {
+      pageProjectIntroTextByIndex[projectIndex] = targetText;
+      pageProjectIntroHrefByIndex[projectIndex] = linkHref;
+    }
+
+    if (IS_TOUCH_DEVICE) {
+      registerMobileIntroTwoTap(titleLink, targetText, linkHref, projectIndex);
+      return;
+    }
+
+    titleLink.addEventListener('mouseenter', () => {
+      domProjectHoverIndex = projectIndex;
+      animateIntroTextTo(targetText, linkHref);
+    });
+    titleLink.addEventListener('mouseleave', () => {
+      if (domProjectHoverIndex === projectIndex) domProjectHoverIndex = -1;
+      scheduleIntroTextReset();
+    });
+    titleLink.addEventListener('focus', () => {
+      domProjectHoverIndex = projectIndex;
+      animateIntroTextTo(targetText, linkHref);
+    });
+    titleLink.addEventListener('blur', () => {
+      if (domProjectHoverIndex === projectIndex) domProjectHoverIndex = -1;
+      scheduleIntroTextReset();
+    });
+  });
+}
+
+function setupContactIntroHoverText() {
+  if (!pageContactEl || !pageIntroDynamicEl) return;
+
+  pageContactLinks = Array.from(pageContactEl.querySelectorAll('a'));
+  pageContactLinks.forEach((link) => {
+    let targetText = (link.getAttribute('data-intro') || '').trim();
+    let linkHref = link.getAttribute('href') || null;
+    if (!targetText) return;
+
+    if (IS_TOUCH_DEVICE) {
+      registerMobileIntroTwoTap(link, targetText, linkHref, -1);
+      return;
+    }
+
+    link.addEventListener('mouseenter', () => animateIntroTextTo(targetText, linkHref));
+    link.addEventListener('mouseleave', () => scheduleIntroTextReset());
+    link.addEventListener('focus', () => animateIntroTextTo(targetText, linkHref));
+    link.addEventListener('blur', () => scheduleIntroTextReset());
+  });
+}
+
+function updateIntroTextFromOrbSelection() {
+  if (selectedIndex === lastSelectedIndex) return;
+  lastSelectedIndex = selectedIndex;
+
+  if (selectedIndex !== -1) {
+    let targetText = pageProjectIntroTextByIndex[selectedIndex] || projects[selectedIndex].title;
+    let targetHref = pageProjectIntroHrefByIndex[selectedIndex] || projects[selectedIndex].url || null;
+    animateIntroTextTo(targetText, targetHref);
+    return;
+  }
+
+  animateIntroTextTo(PAGE_INTRO_DEFAULT_TEXT, null);
+}
+
+function collectIntroDynamicCandidates() {
+  let candidates = [PAGE_INTRO_DEFAULT_TEXT];
+
+  if (pageProjectsEl) {
+    let projectArticles = Array.from(pageProjectsEl.querySelectorAll('article'));
+    projectArticles.forEach((article) => {
+      let titleLink = article.querySelector('h3 a');
+      let descriptionLink = article.querySelector('p a');
+      let targetText = (descriptionLink ? descriptionLink.textContent : '') || (titleLink ? titleLink.textContent : '');
+      targetText = (targetText || '').trim();
+      if (targetText) candidates.push(targetText);
+    });
+  }
+
+  if (pageContactEl) {
+    let contactLinks = Array.from(pageContactEl.querySelectorAll('a[data-intro]'));
+    contactLinks.forEach((link) => {
+      let targetText = (link.getAttribute('data-intro') || '').trim();
+      if (targetText) candidates.push(targetText);
+    });
+  }
+
+  return candidates;
+}
+
+function lockIntroHeightOnSmallScreens() {
+  if (!pageIntroEl) return;
+
+  if (window.innerWidth >= INTRO_LOCK_BREAKPOINT_PX) {
+    pageIntroEl.style.minHeight = '';
+    return;
+  }
+
+  let paragraphWidth = Math.max(1, Math.round(pageIntroEl.getBoundingClientRect().width));
+  let computed = window.getComputedStyle(pageIntroEl);
+  let probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  probe.style.left = '-9999px';
+  probe.style.top = '0';
+  probe.style.width = `${paragraphWidth}px`;
+  probe.style.whiteSpace = 'normal';
+  probe.style.fontFamily = computed.fontFamily;
+  probe.style.fontSize = computed.fontSize;
+  probe.style.fontWeight = computed.fontWeight;
+  probe.style.fontStyle = computed.fontStyle;
+  probe.style.letterSpacing = computed.letterSpacing;
+  probe.style.lineHeight = computed.lineHeight;
+  probe.style.wordSpacing = computed.wordSpacing;
+  probe.style.textTransform = computed.textTransform;
+
+  document.body.appendChild(probe);
+
+  let maxHeight = 0;
+  let candidates = collectIntroDynamicCandidates();
+  candidates.forEach((text) => {
+    probe.textContent = text;
+    maxHeight = Math.max(maxHeight, probe.getBoundingClientRect().height);
+  });
+
+  probe.remove();
+
+  if (maxHeight > 0) {
+    pageIntroEl.style.minHeight = `${Math.ceil(maxHeight)}px`;
+  }
 }
 
 function showBioCloseDotInstantly() {
@@ -484,9 +893,7 @@ function fadeOutLoadOverlay() {
 	dot.style.opacity = 0;
 	dot.style.transform = 'translate(-50%, -50%) scale(0)';
   }
-  if (IS_TOUCH_DEVICE) {
-	overlay.style.transitionDuration = `0.9s, ${MOBILE_REVEAL_TRANSITION_DURATION}`;
-  }
+  overlay.style.transitionDuration = `${OVERLAY_FADE_TRANSITION_DURATION}, ${IS_TOUCH_DEVICE ? MOBILE_REVEAL_TRANSITION_DURATION : DESKTOP_REVEAL_TRANSITION_DURATION}`;
   requestAnimationFrame(() => {
   overlay.classList.add('revealed');
   overlay.addEventListener('transitionend', () => {
@@ -512,6 +919,7 @@ function settleBioOpenState() {
   bioOverlayEl.classList.add('open');
   bioOverlayEl.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bio-open');
+  setSkyboxInteractionLock(false);
 }
 
 function updateBioCloseDot() {
@@ -534,6 +942,9 @@ function toggleBioOverlay() {
 
 function closeBioOverlay() {
   bioRevealTarget = 0;
+  // Lock scrolling immediately instead of waiting for the close animation to
+  // finish, so the page can't scroll/show a scrollbar while it fades out.
+  document.body.classList.add('skybox-view');
 }
 
 function finalizeBioClose() {
@@ -541,6 +952,7 @@ function finalizeBioClose() {
   bioOverlayEl.classList.remove('open');
   bioOverlayEl.setAttribute('aria-hidden', 'true');
   resetBioLinksAfterClose();
+  setSkyboxInteractionLock(true);
 }
 
 function resetBioLinksAfterClose() {
@@ -552,24 +964,19 @@ function resetBioLinksAfterClose() {
   }
 }
 
-function renderPageContentFromTemplate() {
-  let template = document.getElementById('canvas-fallback-content');
-  let contentRoot = document.getElementById('page-content');
-  if (!template || !contentRoot || contentRoot.children.length > 0) return;
-  contentRoot.appendChild(template.content.cloneNode(true));
-}
+function setSkyboxInteractionLock(locked) {
+  let pageContentEl = document.getElementById('page-content');
+  document.body.classList.toggle('skybox-view', locked);
+  if (!pageContentEl) return;
 
-function syncProjectsFromDom() {
-  let links = document.querySelectorAll('#project-list a');
-  links.forEach((link, i) => {
-	if (i >= projects.length) return;
-	let match = link.textContent.match(/^(.*)\s+\((\d{4})\)$/);
-	if (match) {
-	  projects[i].title = match[1].trim();
-	  projects[i].year = parseInt(match[2], 10);
-	}
-	projects[i].url = link.getAttribute('href');
-  });
+  if (locked) {
+    pageContentEl.setAttribute('inert', '');
+    pageContentEl.setAttribute('aria-hidden', 'true');
+    return;
+  }
+
+  pageContentEl.removeAttribute('inert');
+  pageContentEl.removeAttribute('aria-hidden');
 }
 
 function bindPageProjectLinks() {
@@ -618,18 +1025,20 @@ function markProjectVisited(p) {
 
 function windowResized() {
   let nextWidth = window.innerWidth;
-  let nextHeight = window.innerHeight;
+  let nextHeight = resolveStableViewportHeight();
 
   // On touch browsers, Safari's collapsing/expanding browser chrome can fire resize
-  // events without a real layout change. Keep the canvas on the smaller observed
-  // height unless the width changes, which usually means a real layout change.
-  if (IS_TOUCH_DEVICE && nextWidth === stableViewportWidth) {
-    nextHeight = Math.min(stableViewportHeight || nextHeight, nextHeight);
+  // events without a real layout change. Once we already have the full (large)
+  // viewport height, ignore further resizes that report the same size so the
+  // canvas/orbs do not shift as the browser chrome shows/hides.
+  if (IS_TOUCH_DEVICE && nextWidth === stableViewportWidth && nextHeight === stableViewportHeight) {
+    return;
   }
 
   stableViewportWidth = nextWidth;
   stableViewportHeight = nextHeight;
   applyStableViewportHeight(stableViewportHeight);
+  lockIntroHeightOnSmallScreens();
   resizeCanvas(nextWidth, nextHeight);
   positionLoadDot();
   positionBioCloseDot();
@@ -862,11 +1271,87 @@ function isHoveringAnyProject() {
 function updateDesktopHoverSelection() {
   if (IS_TOUCH_DEVICE) return;
 
+  if (domProjectHoverIndex !== -1) {
+    selectedIndex = domProjectHoverIndex;
+    return;
+  }
+
   let hitIndex = findProjectHitIndex(mouseX, mouseY);
   if (hitIndex === -1 && isMouseOverLabelZone()) {
 	hitIndex = labelContentIndex;
   }
   selectedIndex = hitIndex;
+}
+
+function updateProjectNameSelectionState() {
+  if (!pageProjectTitleLinks.length) return;
+  let hasSelectedProject = selectedIndex !== -1;
+
+  for (let i = 0; i < pageProjectTitleLinks.length; i++) {
+    let link = pageProjectTitleLinks[i];
+    let index = Number(link.dataset.projectIndex);
+    let isSelected = index === selectedIndex;
+    link.classList.toggle('orb-selected-name', isSelected);
+  }
+
+  if (IS_TOUCH_DEVICE && hasSelectedProject) {
+    setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, true);
+  }
+}
+
+let mobileProjectsListEl = null;
+let mobileProjectsToggleEl = null;
+let mobileContactListEl = null;
+let mobileContactToggleEl = null;
+
+function setMobileListOpen(listEl, toggleEl, open) {
+  if (!listEl || !toggleEl) return;
+  listEl.classList.toggle('open', open);
+  toggleEl.setAttribute('aria-expanded', open ? 'true' : 'false');
+  toggleEl.classList.toggle('is-open', open);
+}
+
+function toggleMobileList(listEl, toggleEl) {
+  if (!listEl || !toggleEl) return;
+  setMobileListOpen(listEl, toggleEl, !listEl.classList.contains('open'));
+  toggleEl.blur();
+}
+
+function closeMobileLists() {
+  setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, false);
+  setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
+}
+
+const MOBILE_LIST_PRESERVE_SELECTOR = '#hero, #bio-overlay, #bio-close-dot, section[aria-labelledby="selected-projects-title"], section[aria-labelledby="main-contact-heading"]';
+
+function setupMobileListOutsideClose() {
+  document.addEventListener('click', (event) => {
+    if (event.target && event.target.closest && event.target.closest(MOBILE_LIST_PRESERVE_SELECTOR)) return;
+    closeMobileLists();
+  });
+}
+
+function setupMobileListToggles() {
+  mobileProjectsListEl = document.getElementById('selected-projects-list');
+  mobileProjectsToggleEl = document.getElementById('projects-toggle');
+  mobileContactListEl = document.getElementById('main-contact-list');
+  mobileContactToggleEl = document.getElementById('contact-toggle');
+
+  if (mobileProjectsToggleEl) {
+    mobileProjectsToggleEl.addEventListener('click', () => {
+      setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
+      toggleMobileList(mobileProjectsListEl, mobileProjectsToggleEl);
+    });
+  }
+
+  if (mobileContactToggleEl) {
+    mobileContactToggleEl.addEventListener('click', () => {
+      setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, false);
+      toggleMobileList(mobileContactListEl, mobileContactToggleEl);
+    });
+  }
+
+  setupMobileListOutsideClose();
 }
 
 function markDragMovedIfPastThreshold(x, y) {
@@ -937,29 +1422,16 @@ function updateHoverCursor() {
   document.body.style.cursor = hovering ? 'pointer' : 'default';
 }
 
-const BIO_DIM_OPACITY = 0.2;
 function updateBioDimmedState() {
   if (!bioOverlayEl) return;
   bioOverlayEl.classList.toggle('orb-selected', selectedIndex !== -1);
-  let opacity = lerp(BIO_DIM_OPACITY, 1, timeScale);
-  if (bioOverlayContentEl) {
-	bioOverlayContentEl.style.opacity = opacity;
-  }
-  if (pageIntroEl) {
-	pageIntroEl.style.opacity = opacity;
-  }
-  if (pageProjectsEl) {
-	pageProjectsEl.style.opacity = opacity;
-  }
-  if (pageContactEl) {
-	pageContactEl.style.opacity = opacity;
-  }
 }
 
 function draw() {
   clear();
 
   updateDesktopHoverSelection();
+  updateIntroTextFromOrbSelection();
 
   let targetTimeScale = (selectedIndex === -1) ? 1 : 0;
   timeScale = lerp(timeScale, targetTimeScale, TIME_SCALE_EASE);
@@ -1102,6 +1574,7 @@ function draw() {
   updateHoverCursor();
   updateOrbLabel();
   updateOrbLinkHitzone();
+  updateProjectNameSelectionState();
   updateDotOcclusion(camDist);
   updateBioDimmedState();
 }
@@ -1132,6 +1605,12 @@ function updateDotOcclusion(camDist) {
 
 function updateOrbLabel() {
   if (!orbLabelEl) return;
+
+  if (!shouldShowOrbLabel()) {
+    orbLabelEl.style.opacity = 0;
+    orbLabelEl.classList.remove('active');
+    return;
+  }
 
   if (labelPhase === 'idle') {
 	if (selectedIndex !== labelContentIndex) {
