@@ -1,3 +1,10 @@
+if ('scrollRestoration' in history) {
+  history.scrollRestoration = 'manual';
+}
+window.scrollTo(0, 0);
+window.addEventListener('DOMContentLoaded', () => window.scrollTo(0, 0));
+window.addEventListener('load', () => window.scrollTo(0, 0));
+
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, orbitSpeed: 0.0015, size: 74 },
   { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, orbitSpeed: 0.0015, size: 74 },
@@ -66,6 +73,7 @@ let orbitRadiusBoost = 0;
 let orbitRotationMatrix = mat3Multiply(mat3RotY((28 * Math.PI) / 180), mat3RotX((38 * Math.PI) / 180));
 
 const IS_TOUCH_DEVICE = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+document.documentElement.classList.toggle('is-touch-device', IS_TOUCH_DEVICE);
 
 let stableViewportWidth = 0;
 let stableViewportHeight = 0;
@@ -75,14 +83,17 @@ function applyStableViewportHeight(heightPx) {
   document.documentElement.style.setProperty('--app-height', heightPx + 'px');
 }
 
+let viewportChromeInsetPx = 0;
+
 function applyViewportChromeInset(insetPx) {
-  document.documentElement.style.setProperty('--viewport-chrome-inset', Math.max(0, insetPx) + 'px');
+  viewportChromeInsetPx = Math.max(0, insetPx);
+  document.documentElement.style.setProperty('--viewport-chrome-inset', viewportChromeInsetPx + 'px');
 }
 
-// Mobile browsers report a shrunk window.innerHeight while their address bar/status
-// bar is visible, then grow the real viewport once the chrome auto-hides. Probe the
-// CSS large-viewport-height unit (100lvh) to get the full viewport size up front, so
-// the canvas always fills the whole screen instead of the temporarily reduced one.
+function verticalCenterOffset() {
+  return IS_TOUCH_DEVICE ? viewportChromeInsetPx / 2 : 0;
+}
+
 function measureLargeViewportHeight() {
   if (typeof CSS === 'undefined' || !CSS.supports || !CSS.supports('height', '100lvh')) {
     return window.innerHeight;
@@ -136,6 +147,8 @@ const BIO_REVEAL_OPEN_SETTLE_EASE = 0.09;
 let bioRevealTarget = 1;
 let bioRevealProgress = 1;
 
+let pageScrollLockedForBio = false;
+
 function computeFitDistance(vFov, aspect) {
   let distForHeight = ORBIT_CONTENT_RADIUS / Math.tan(vFov / 2);
   let dist = distForHeight;
@@ -175,7 +188,7 @@ function positionLoadDot() {
   let centerX = (typeof width !== 'undefined' && width > 0) ? width : window.innerWidth;
   let centerY = (typeof height !== 'undefined' && height > 0) ? height : resolveStableViewportHeight();
   dot.style.left = `${centerX / 2}px`;
-  dot.style.top = `${centerY / 2}px`;
+  dot.style.top = `${centerY / 2 - verticalCenterOffset()}px`;
 }
 positionLoadDot();
 
@@ -197,22 +210,15 @@ function sizeDotHitElement(dot) {
 function positionBioCloseDot() {
   if (!bioCloseDotEl) return;
   bioCloseDotEl.style.left = `${width / 2}px`;
-  bioCloseDotEl.style.top = `${height / 2}px`;
+  bioCloseDotEl.style.top = `${height / 2 - verticalCenterOffset()}px`;
 }
 
-const LOAD_DOT_DELAY_MS = 300;
-const MOBILE_ZOOM_DELAY_MS = 300;
 const DESKTOP_REVEAL_TRANSITION_DURATION = '0.55s';
 const MOBILE_REVEAL_TRANSITION_DURATION = '0.7s';
 const OVERLAY_FADE_TRANSITION_DURATION = '0.35s';
-let loadTookLong = false;
-let loadDotTimer;
 {
   let dot = document.getElementById('load-dot');
   if (dot) dot.classList.add('visible');
-  loadDotTimer = setTimeout(() => {
-	loadTookLong = true;
-  }, IS_TOUCH_DEVICE ? MOBILE_ZOOM_DELAY_MS : LOAD_DOT_DELAY_MS);
 }
 
 let bioOverlayEl;
@@ -243,9 +249,9 @@ const INTRO_HIGHLIGHT_PHRASES = [
   '[untold]',
   'dedicated space',
   'Persistence of Color',
-  'digital binding',
+  'digital binding.',
   'collaborations',
-  'Instagram.',
+  'social media.',
   'web projects'
 ];
 const INTRO_HIGHLIGHT_PATTERN = new RegExp(
@@ -260,7 +266,7 @@ const PAGE_INTRO_RESET_DELAY_MS = 70;
 const PAGE_INTRO_FADE_DURATION_MS = 360;
 const MOBILE_INTRO_TWO_TAP_RESET_MS = 2500;
 const INTRO_LOCK_BREAKPOINT_PX = 960;
-const INTRO_TWO_TAP_LINK_SELECTOR = '#page-content section[aria-labelledby="selected-projects-title"] h3 a, #page-content section[aria-labelledby="main-contact-heading"] a';
+const INTRO_TWO_TAP_LINK_SELECTOR = '#page-content nav[aria-labelledby="selected-projects-title"] h3 a, #page-content footer[aria-labelledby="main-contact-heading"] a';
 let pageIntroResetTimer = null;
 let pageIntroTargetText = PAGE_INTRO_DEFAULT_TEXT;
 let pageIntroCurrentText = PAGE_INTRO_DEFAULT_TEXT;
@@ -405,8 +411,6 @@ function blockTouchScrollWhileOrbSelected(event) {
   let pullingDown = currentY > touchStartY;
   let atTop = window.scrollY <= 0;
 
-  // Block only top overscroll (including pull-to-refresh) while preserving
-  // native bottom overscroll behavior.
   if (atTop && pullingDown) {
     event.preventDefault();
   }
@@ -424,9 +428,6 @@ function setup() {
   stableViewportWidth = window.innerWidth;
   stableViewportHeight = resolveStableViewportHeight();
   initialViewportHeight = window.innerHeight;
-  // The gap recovered by measuring the full (large) viewport height instead of the
-  // shrunk one is roughly the height of the browser's status bar/chrome. Expose it
-  // so layout can pull content back up by that same amount.
   applyViewportChromeInset(IS_TOUCH_DEVICE ? stableViewportHeight - initialViewportHeight : 0);
   let cnv = createCanvas(stableViewportWidth, stableViewportHeight, WEBGL);
   applyStableViewportHeight(stableViewportHeight);
@@ -464,8 +465,8 @@ function setup() {
   bioOverlayContentEl = document.querySelector('#bio-overlay .bio-overlay-content');
   pageIntroEl = document.querySelector('#page-content > article > header p');
   pageIntroDynamicEl = document.getElementById('intro-dynamic-text');
-  pageProjectsEl = document.querySelector('#page-content section[aria-labelledby="selected-projects-title"]');
-  pageContactEl = document.querySelector('#page-content section[aria-labelledby="main-contact-heading"]');
+  pageProjectsEl = document.querySelector('#page-content nav[aria-labelledby="selected-projects-title"]');
+  pageContactEl = document.querySelector('#page-content footer[aria-labelledby="main-contact-heading"]');
   if (pageIntroDynamicEl) {
     pageIntroCurrentText = pageIntroDynamicEl.textContent || PAGE_INTRO_DEFAULT_TEXT;
     renderIntroDynamicText(pageIntroCurrentText);
@@ -522,18 +523,6 @@ function setup() {
   fadeOutLoadOverlay();
 }
 
-function shuffledIndices(count) {
-  let indices = [];
-  for (let i = 0; i < count; i++) indices.push(i);
-  for (let i = indices.length - 1; i > 0; i--) {
-    let j = Math.floor(Math.random() * (i + 1));
-    let tmp = indices[i];
-    indices[i] = indices[j];
-    indices[j] = tmp;
-  }
-  return indices;
-}
-
 function escapeHtml(text) {
   return text
     .replace(/&/g, '&amp;')
@@ -554,10 +543,6 @@ function setTouchSelectionState(nextIndex) {
   pendingOpenIndex = -1;
 }
 
-function computeIntroFadeDuration(text) {
-  return PAGE_INTRO_FADE_DURATION_MS;
-}
-
 function animateIntroTextTo(targetText, linkHref) {
   if (!pageIntroDynamicEl) return;
   let nextHref = linkHref || null;
@@ -573,7 +558,7 @@ function animateIntroTextTo(targetText, linkHref) {
   pageIntroTargetText = targetText;
   pageIntroFadeToken += 1;
   let fadeToken = pageIntroFadeToken;
-  let fadeDurationMs = computeIntroFadeDuration(pageIntroCurrentText || '');
+  let fadeDurationMs = PAGE_INTRO_FADE_DURATION_MS;
   let swapDelayMs = fadeDurationMs;
   let lockedWidthPx = Math.ceil(pageIntroDynamicEl.getBoundingClientRect().width);
 
@@ -604,6 +589,7 @@ function scheduleIntroTextReset() {
 }
 
 function clearMobileIntroArmedLink() {
+  if (mobileIntroArmedLink) mobileIntroArmedLink.classList.remove('two-tap-armed');
   mobileIntroArmedLink = null;
   if (mobileIntroArmedTimer) {
     clearTimeout(mobileIntroArmedTimer);
@@ -612,7 +598,11 @@ function clearMobileIntroArmedLink() {
 }
 
 function armMobileIntroLink(link) {
+  if (mobileIntroArmedLink && mobileIntroArmedLink !== link) {
+    mobileIntroArmedLink.classList.remove('two-tap-armed');
+  }
   mobileIntroArmedLink = link;
+  link.classList.add('two-tap-armed');
   if (mobileIntroArmedTimer) clearTimeout(mobileIntroArmedTimer);
   mobileIntroArmedTimer = setTimeout(() => {
     clearMobileIntroArmedLink();
@@ -624,13 +614,11 @@ function bindMobileTwoTapIntroReset() {
 
   document.addEventListener('touchstart', (event) => {
     if (!mobileIntroArmedLink) return;
-    if (!event.target || !event.target.closest) {
-      clearMobileIntroArmedLink();
-      return;
-    }
-    let tappedIntroLink = event.target.closest(INTRO_TWO_TAP_LINK_SELECTOR);
-    if (!tappedIntroLink) {
-      clearMobileIntroArmedLink();
+    let tappedIntroLink = event.target && event.target.closest && event.target.closest(INTRO_TWO_TAP_LINK_SELECTOR);
+    if (tappedIntroLink) return;
+
+    clearMobileIntroArmedLink();
+    if (selectedIndex === -1) {
       animateIntroTextTo(PAGE_INTRO_DEFAULT_TEXT, null);
     }
   }, { passive: true });
@@ -640,7 +628,8 @@ function registerMobileIntroTwoTap(link, targetText, linkHref, selectionIndex = 
   if (!IS_TOUCH_DEVICE) return;
 
   link.addEventListener('click', (event) => {
-    if (mobileIntroArmedLink === link) {
+    let alreadySelected = selectionIndex !== -1 && selectedIndex === selectionIndex;
+    if (mobileIntroArmedLink === link || alreadySelected) {
       clearMobileIntroArmedLink();
       return;
     }
@@ -822,6 +811,12 @@ function updateBioReveal() {
 	updateToggleDotVisual();
 	finalizeBioClose();
   }
+
+  if (bioOverlayOpen && bioRevealTarget >= 1 && bioRevealProgress > 0.998) {
+	bioRevealProgress = 1;
+	applyBioRevealCss();
+	pageScrollLockedForBio = false;
+  }
 }
 
 function computeBioMaskMaxRadius() {
@@ -862,7 +857,6 @@ function updateToggleDotVisual() {
 }
 
 function fadeOutLoadOverlay() {
-  clearTimeout(loadDotTimer);
   let overlay = document.getElementById('load-overlay');
   let dot = document.getElementById('load-dot');
   if (!overlay) {
@@ -919,6 +913,7 @@ function setBioCloseDotHover(hovering) {
 }
 
 function toggleBioOverlay() {
+  pageScrollLockedForBio = true;
   if (bioRevealTarget > 0.5) {
 	closeBioOverlay();
   } else {
@@ -928,8 +923,6 @@ function toggleBioOverlay() {
 
 function closeBioOverlay() {
   bioRevealTarget = 0;
-  // Lock scrolling immediately instead of waiting for the close animation to
-  // finish, so the page can't scroll/show a scrollbar while it fades out.
   document.body.classList.add('skybox-view');
 }
 
@@ -970,8 +963,9 @@ function bindPageProjectLinks() {
   if (!contentRoot) return;
 
   contentRoot.addEventListener('click', (event) => {
-  let link = event.target.closest('section[aria-labelledby="selected-projects-title"] a');
+  let link = event.target.closest('nav[aria-labelledby="selected-projects-title"] a');
   if (!link) return;
+  if (event.defaultPrevented) return;
   let href = link.getAttribute('href');
   let project = projects.find((item) => item.url === href);
   if (!project) return;
@@ -1013,10 +1007,6 @@ function windowResized() {
   let nextWidth = window.innerWidth;
   let nextHeight = resolveStableViewportHeight();
 
-  // On touch browsers, Safari's collapsing/expanding browser chrome can fire resize
-  // events without a real layout change. Once we already have the full (large)
-  // viewport height, ignore further resizes that report the same size so the
-  // canvas/orbs do not shift as the browser chrome shows/hides.
   if (IS_TOUCH_DEVICE && nextWidth === stableViewportWidth && nextHeight === stableViewportHeight) {
     return;
   }
@@ -1278,9 +1268,14 @@ function updateProjectNameSelectionState() {
     let index = Number(link.dataset.projectIndex);
     let isSelected = index === selectedIndex;
     link.classList.toggle('orb-selected-name', isSelected);
+    link.classList.toggle('orb-dimmed-name', hasSelectedProject && !isSelected);
   }
 
-  if (IS_TOUCH_DEVICE && hasSelectedProject) {
+  if (mobileProjectsToggleEl) mobileProjectsToggleEl.classList.toggle('orb-dimmed-name', hasSelectedProject);
+  if (mobileContactToggleEl) mobileContactToggleEl.classList.toggle('orb-dimmed-name', hasSelectedProject);
+
+  if (hasSelectedProject) {
+    setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
     setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, true);
   }
 }
@@ -1308,7 +1303,7 @@ function closeMobileLists() {
   setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
 }
 
-const MOBILE_LIST_PRESERVE_SELECTOR = '#hero, #bio-overlay, #bio-close-dot, section[aria-labelledby="selected-projects-title"], section[aria-labelledby="main-contact-heading"]';
+const MOBILE_LIST_PRESERVE_SELECTOR = '#hero, #bio-overlay, #bio-close-dot, nav[aria-labelledby="selected-projects-title"], footer[aria-labelledby="main-contact-heading"]';
 
 function setupMobileListOutsideClose() {
   document.addEventListener('click', (event) => {
@@ -1317,11 +1312,36 @@ function setupMobileListOutsideClose() {
   });
 }
 
+function setupDesktopListHoverToggle(sectionEl, listEl, toggleEl, otherListEl, otherToggleEl) {
+  if (!sectionEl || !listEl || !toggleEl) return;
+
+  function open() {
+    setMobileListOpen(otherListEl, otherToggleEl, false);
+    setMobileListOpen(listEl, toggleEl, true);
+  }
+
+  sectionEl.addEventListener('mouseenter', open);
+  toggleEl.addEventListener('focus', open);
+  toggleEl.addEventListener('click', () => {
+    if (listEl.classList.contains('open')) {
+      setMobileListOpen(listEl, toggleEl, false);
+    }
+  });
+}
+
 function setupMobileListToggles() {
   mobileProjectsListEl = document.getElementById('selected-projects-list');
   mobileProjectsToggleEl = document.getElementById('projects-toggle');
   mobileContactListEl = document.getElementById('main-contact-list');
   mobileContactToggleEl = document.getElementById('contact-toggle');
+
+  if (!IS_TOUCH_DEVICE) {
+    let projectsSectionEl = document.querySelector('nav[aria-labelledby="selected-projects-title"]');
+    let contactSectionEl = document.querySelector('footer[aria-labelledby="main-contact-heading"]');
+    setupDesktopListHoverToggle(projectsSectionEl, mobileProjectsListEl, mobileProjectsToggleEl, mobileContactListEl, mobileContactToggleEl);
+    setupDesktopListHoverToggle(contactSectionEl, mobileContactListEl, mobileContactToggleEl, mobileProjectsListEl, mobileProjectsToggleEl);
+    return;
+  }
 
   if (mobileProjectsToggleEl) {
     mobileProjectsToggleEl.addEventListener('click', () => {
@@ -1332,6 +1352,7 @@ function setupMobileListToggles() {
 
   if (mobileContactToggleEl) {
     mobileContactToggleEl.addEventListener('click', () => {
+      setTouchSelectionState(-1);
       setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, false);
       toggleMobileList(mobileContactListEl, mobileContactToggleEl);
     });
@@ -1625,7 +1646,7 @@ function applyLabelContent() {
 
   orbLabelEl.textContent = p.title;
   orbLabelEl.href = p.url;
-  orbLabelEl.style.top = `${p.screenY + p.screenRadius + (IS_TOUCH_DEVICE ? 14 : 20)}px`;
+  orbLabelEl.style.top = `${p.screenY + p.screenRadius + (IS_TOUCH_DEVICE ? 14 : 20) - verticalCenterOffset()}px`;
   orbLabelEl.style.opacity = 1;
   orbLabelEl.classList.add('active');
 
@@ -1696,7 +1717,7 @@ function beginCameraDrag(x, y) {
   dragStartY = y;
 }
 
-const INTERACTIVE_ELEMENT_SELECTOR = '#label, #orb-link, #bio-close-dot, .bio-overlay-links a';
+const INTERACTIVE_ELEMENT_SELECTOR = '#label, #orb-link, #bio-close-dot, .bio-overlay-links a, #page-content a, #page-content button';
 
 function isInteractiveTarget(event) {
   return !!(event && event.target && event.target.closest && event.target.closest(INTERACTIVE_ELEMENT_SELECTOR));
@@ -1744,5 +1765,122 @@ function touchEnded(event) {
   if (isInteractiveTarget(event)) return true;
   if (!dragMoved) finalizeTap(dragStartX, dragStartY);
   return true;
+}
+
+const PAGE_SCROLL_ANIMATION_MS = 500;
+const PAGE_WHEEL_DELTA_THRESHOLD = 2;
+let pageScrollAnimating = false;
+let pageScrollAnimationToken = 0;
+
+function easeInOutCubicScroll(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function getPageSectionOffsets() {
+  let pageContentEl = document.getElementById('page-content');
+  let bottomY = pageContentEl ? pageContentEl.getBoundingClientRect().top + window.scrollY : 0;
+  return { topY: 0, bottomY };
+}
+
+function prefersReducedMotionScroll() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
+function animatePageScrollTo(targetY) {
+  let startY = window.scrollY;
+  let distance = targetY - startY;
+  if (Math.abs(distance) < 1) return;
+
+  if (prefersReducedMotionScroll()) {
+    window.scrollTo(0, targetY);
+    return;
+  }
+
+  pageScrollAnimating = true;
+  let token = ++pageScrollAnimationToken;
+  let startTime = performance.now();
+
+  function step(now) {
+    if (token !== pageScrollAnimationToken) return;
+    let elapsed = now - startTime;
+    let t = Math.min(elapsed / PAGE_SCROLL_ANIMATION_MS, 1);
+    window.scrollTo(0, startY + distance * easeInOutCubicScroll(t));
+    if (t < 1) {
+      requestAnimationFrame(step);
+    } else {
+      pageScrollAnimating = false;
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+function goToPageState(direction) {
+  if (pageScrollLockedForBio) return;
+  let { topY, bottomY } = getPageSectionOffsets();
+  let targetY = direction > 0 ? bottomY : topY;
+  if (Math.abs(targetY - window.scrollY) < 1) return;
+  closeMobileLists();
+  animatePageScrollTo(targetY);
+}
+
+function handlePageWheel(event) {
+  event.preventDefault();
+  if (pageScrollLockedForBio) return;
+  if (pageScrollAnimating) return;
+  if (Math.abs(event.deltaY) < PAGE_WHEEL_DELTA_THRESHOLD) return;
+  goToPageState(event.deltaY > 0 ? 1 : -1);
+}
+
+window.addEventListener('wheel', handlePageWheel, { passive: false });
+
+const PAGE_SWIPE_TRIGGER_PX = 45;
+let pageSwipeActive = false;
+let pageSwipeTriggered = false;
+let pageSwipeStartX = 0;
+let pageSwipeStartY = 0;
+
+function handlePageTouchStart(event) {
+  if (pageScrollLockedForBio || selectedIndex !== -1 || isInteractiveTarget(event) || !event.touches || event.touches.length !== 1) {
+	pageSwipeActive = false;
+	return;
+  }
+  pageSwipeActive = true;
+  pageSwipeTriggered = false;
+  pageSwipeStartX = event.touches[0].clientX;
+  pageSwipeStartY = event.touches[0].clientY;
+}
+
+function handlePageTouchMove(event) {
+  if (!pageSwipeActive || !event.touches || event.touches.length !== 1) return;
+  if (pageScrollLockedForBio || selectedIndex !== -1) {
+	pageSwipeActive = false;
+	return;
+  }
+  event.preventDefault();
+  if (pageSwipeTriggered || pageScrollAnimating) return;
+
+  let deltaX = event.touches[0].clientX - pageSwipeStartX;
+  let deltaY = event.touches[0].clientY - pageSwipeStartY;
+  if (Math.abs(deltaY) < PAGE_SWIPE_TRIGGER_PX || Math.abs(deltaY) <= Math.abs(deltaX)) return;
+
+  pageSwipeTriggered = true;
+  isDraggingCamera = false;
+  dragMoved = false;
+  lastTouchDragX = null;
+  lastTouchDragY = null;
+
+  goToPageState(deltaY < 0 ? 1 : -1);
+}
+
+function handlePageTouchEnd() {
+  pageSwipeActive = false;
+  pageSwipeTriggered = false;
+}
+
+if (IS_TOUCH_DEVICE) {
+  document.addEventListener('touchstart', handlePageTouchStart, { passive: true });
+  document.addEventListener('touchmove', handlePageTouchMove, { passive: false });
+  document.addEventListener('touchend', handlePageTouchEnd, { passive: true });
+  document.addEventListener('touchcancel', handlePageTouchEnd, { passive: true });
 }
 

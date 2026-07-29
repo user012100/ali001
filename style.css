@@ -8,6 +8,30 @@ html, body {
   background: #000000;
   touch-action: pan-y;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.is-touch-device,
+html.is-touch-device body {
+  touch-action: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+html {
+  scroll-snap-type: y mandatory;
+}
+
+#hero,
+#page-content {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 :root {
@@ -31,13 +55,11 @@ body.skybox-view #page-content {
 
 #hero {
   position: relative;
-  height: var(--app-height, 100vh);
-  min-height: 36rem;
-  overflow: hidden;
+  height: auto;
+  min-height: var(--app-height, 100vh);
+  overflow: visible;
 }
 
-/* Keep the interactive orb layer anchored to the viewport center while
-   preserving normal document flow for surrounding content. */
 canvas,
 #load-overlay,
 #load-dot,
@@ -54,6 +76,10 @@ canvas {
   outline: none;
   z-index: 10;
   pointer-events: none;
+}
+
+html.is-touch-device canvas {
+  top: calc(-1 * var(--viewport-chrome-inset, 0px) / 2);
 }
 
 @property --reveal-radius {
@@ -177,9 +203,6 @@ canvas {
   gap: 2lh;
 }
 
-/* While a project orb is selected (hovered on desktop, tapped on touch), the bio text and
-   links dim out of the way (opacity is driven from JS, eased at the same speed as the
-   skybox fade) and the links become unclickable until the orb is deselected. */
 #bio-overlay.orb-selected .bio-overlay-content a {
   pointer-events: none;
 }
@@ -263,6 +286,8 @@ canvas {
   min-height: 36rem;
   height: var(--app-height, 100vh);
   padding: clamp(1rem, 2.2vw, 2rem);
+  padding-bottom: 0;
+  margin-top: 0;
   box-sizing: border-box;
   background: #000000;
   color: #5998CF;
@@ -273,7 +298,7 @@ canvas {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 2lh;
+  gap: 0.6lh;
 }
 
 #page-content-title,
@@ -291,13 +316,13 @@ canvas {
 
 #page-content > article > header p {
   margin: 0;
+  margin-left: 0;
   font-size: clamp(2.4rem, 8.6vw, 5.2rem);
   font-weight: 600;
   line-height: 1.1;
   color: #5998CF;
   width: 100%;
-  margin-left: auto;
-  text-align: right;
+  text-align: left;
 }
 
 #page-content > article > header p .intro-keywords {
@@ -309,201 +334,136 @@ canvas {
 }
 
 
-#page-content section[aria-labelledby="selected-projects-title"] {
-  margin-top: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5lh;
+.is-touch-device #page-content {
+  padding-top: max(0px, calc(0.5rem - var(--viewport-chrome-inset, 0px)));
+  min-height: calc(var(--app-height, 100vh) * 0.85);
+  height: auto;
 }
 
 .mobile-list-toggle {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  color: #EB3DA8;
+  background: none;
+  border: none;
+  padding: 0 0 calc(clamp(1rem, 2.2vw, 2rem) + 0.15lh) 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: clamp(1.45rem, 3.1vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: color var(--selection-fade-duration) var(--selection-fade-ease), padding-bottom 0.45s var(--selection-fade-ease), opacity var(--selection-fade-duration) var(--selection-fade-ease);
 }
 
-.mobile-collapsible,
-.mobile-collapsible-inner {
-  display: contents;
+.mobile-list-toggle.is-open {
+  padding-bottom: 0.4lh;
 }
 
-@media (width < 960px) {
-  #hero {
-    height: auto;
-    min-height: var(--app-height, 100vh);
-    overflow: visible;
-  }
+.mobile-list-toggle.orb-dimmed-name {
+  opacity: 0.33;
+}
 
-  #page-content {
-    margin-top: 0;
-    padding-top: max(0px, calc(0.5rem - var(--viewport-chrome-inset, 0px)));
-    padding-bottom: 0;
-    min-height: calc(var(--app-height, 100vh) * 0.85);
-    height: auto;
-  }
+#page-content nav[aria-labelledby="selected-projects-title"] .mobile-list-toggle {
+  padding-left: clamp(1rem, 2.2vw, 2rem);
+}
 
-  #page-content > article {
-    min-height: 100%;
-    gap: 0.6lh;
-  }
+#page-content footer[aria-labelledby="main-contact-heading"] .mobile-list-toggle {
+  padding-right: clamp(1rem, 2.2vw, 2rem);
+}
 
-  #page-content > article > header p {
-    margin-left: 0;
-    text-align: left;
-  }
+.mobile-list-toggle:focus-visible,
+.mobile-list-toggle.is-open {
+  color: #e6e6e6;
+}
 
-  .mobile-list-toggle {
-    display: inline-flex;
-    align-items: center;
-    color: #EB3DA8;
-    background: none;
-    border: none;
-    padding: 0 0 clamp(1rem, 2.2vw, 2rem) 0;
-    margin: 0;
-    font-family: inherit;
-    font-size: clamp(1.45rem, 3.1vw, 2.2rem);
-    font-weight: 500;
-    line-height: 1.2;
-    cursor: pointer;
-    transition: color var(--selection-fade-duration) var(--selection-fade-ease), padding-bottom 0.45s var(--selection-fade-ease);
-  }
-
-  .mobile-list-toggle.is-open {
-    padding-bottom: 0.4lh;
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] .mobile-list-toggle {
-    padding-left: clamp(1rem, 2.2vw, 2rem);
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] .mobile-list-toggle {
-    padding-right: clamp(1rem, 2.2vw, 2rem);
-  }
-
-  .mobile-list-toggle:focus-visible,
-  .mobile-list-toggle.is-open {
+@media (hover: hover) {
+  .mobile-list-toggle:hover {
     color: #e6e6e6;
   }
-
-  @media (hover: hover) {
-    .mobile-list-toggle:hover {
-      color: #e6e6e6;
-    }
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"],
-  #page-content section[aria-labelledby="main-contact-heading"] {
-    position: absolute;
-    bottom: 0;
-    margin-top: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    max-width: 58vw;
-    z-index: 2;
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] {
-    left: 0;
-    align-items: flex-start;
-    max-width: 88vw;
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] {
-    right: 0;
-    align-items: flex-end;
-  }
-
-  .mobile-collapsible {
-    display: grid;
-    grid-template-rows: 0fr;
-    margin-top: 0;
-    padding-bottom: 0;
-    opacity: 0;
-    transition: grid-template-rows 0.45s var(--selection-fade-ease), opacity 0.4s var(--selection-fade-ease), padding-bottom 0.45s var(--selection-fade-ease);
-  }
-
-  .mobile-collapsible-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4lh;
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] .mobile-collapsible {
-    padding-left: clamp(1rem, 2.2vw, 2rem);
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] .mobile-collapsible {
-    padding-right: clamp(1rem, 2.2vw, 2rem);
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] .mobile-collapsible-inner {
-    align-items: flex-end;
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] .mobile-collapsible .page-link-list {
-    gap: 0.4lh;
-  }
-
-  .mobile-collapsible.open {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    padding-bottom: clamp(1rem, 2.2vw, 2rem);
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] h3 {
-    line-height: 1.1;
-    white-space: nowrap;
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] h3 a:hover,
-  #page-content section[aria-labelledby="selected-projects-title"] h3 a:focus-visible {
-    color: #5998CF;
-  }
 }
 
-@media (width >= 960px) {
-  #page-content > article {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-rows: auto 1fr;
-    column-gap: clamp(2rem, 4vw, 5rem);
-    row-gap: 2lh;
-    align-content: stretch;
-  }
-
-  #page-content > article > header {
-    grid-column: 1 / -1;
-  }
-
-  #page-content section[aria-labelledby="selected-projects-title"] {
-    grid-column: 1;
-    align-self: end;
-  }
-
-  #page-content section[aria-labelledby="main-contact-heading"] {
-    grid-column: 2;
-    align-self: end;
-    justify-self: end;
-  }
-
-}
-
-#page-content section[aria-labelledby="selected-projects-title"] article {
+#page-content nav[aria-labelledby="selected-projects-title"],
+#page-content footer[aria-labelledby="main-contact-heading"] {
+  position: absolute;
+  bottom: 0;
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
+  max-width: 58vw;
+  z-index: 2;
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] h3 {
+#page-content nav[aria-labelledby="selected-projects-title"] {
+  left: 0;
+  align-items: flex-start;
+  max-width: 88vw;
+}
+
+#page-content footer[aria-labelledby="main-contact-heading"] {
+  right: 0;
+  align-items: flex-end;
+}
+
+.mobile-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  margin-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  transition: grid-template-rows 0.45s var(--selection-fade-ease), opacity 0.4s var(--selection-fade-ease), padding-bottom 0.45s var(--selection-fade-ease);
+}
+
+.mobile-collapsible-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4lh;
+  overflow: hidden;
+  min-height: 0;
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] .mobile-collapsible {
+  padding-left: clamp(1rem, 2.2vw, 2rem);
+}
+
+#page-content footer[aria-labelledby="main-contact-heading"] .mobile-collapsible {
+  padding-right: clamp(1rem, 2.2vw, 2rem);
+}
+
+#page-content footer[aria-labelledby="main-contact-heading"] .mobile-collapsible-inner {
+  align-items: flex-end;
+}
+
+#page-content footer[aria-labelledby="main-contact-heading"] .mobile-collapsible .page-link-list {
+  gap: 0.4lh;
+}
+
+.mobile-collapsible.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  padding-bottom: clamp(1rem, 2.2vw, 2rem);
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] article {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-bottom: 0.15lh;
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] h3 {
   margin: 0;
   font-size: clamp(1.45rem, 3.1vw, 2.2rem);
   font-weight: 500;
   line-height: 1.2;
+  white-space: nowrap;
   color: #5998CF;
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] h3 a {
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a {
+  display: inline-flex;
+  align-items: center;
   color: #EB3DA8;
   text-decoration: none;
   font-size: inherit;
@@ -511,39 +471,31 @@ canvas {
   transition: opacity var(--selection-fade-duration) var(--selection-fade-ease), color var(--selection-fade-duration) var(--selection-fade-ease);
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] h3 a:hover,
-#page-content section[aria-labelledby="selected-projects-title"] h3 a:focus-visible {
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:hover,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:focus-visible {
   color: #e6e6e6;
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] h3 a.orb-selected-name {
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.orb-selected-name {
   color: #e6e6e6;
   opacity: 1;
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] h3 a.orb-dimmed-name {
-  opacity: 0.22;
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.orb-dimmed-name {
+  opacity: 0.33;
 }
 
-#page-content section[aria-labelledby="selected-projects-title"] p {
-  display: none;
-}
-
-#page-content section[aria-labelledby="selected-projects-title"] p a {
-  color: inherit;
-  text-decoration: none;
-  display: block;
-}
-
-#page-content section[aria-labelledby="main-contact-heading"] {
+#page-content footer[aria-labelledby="main-contact-heading"] {
   margin-top: 1.2lh;
 }
 
-#page-content section[aria-labelledby="main-contact-heading"] .page-link-list {
+#page-content footer[aria-labelledby="main-contact-heading"] .page-link-list {
   align-items: flex-end;
 }
 
-#page-content section[aria-labelledby="main-contact-heading"] a {
+#page-content footer[aria-labelledby="main-contact-heading"] a {
+  display: inline-flex;
+  align-items: center;
   color: #EB3DA8;
   text-decoration: none;
   font-size: clamp(1.45rem, 3.1vw, 2.2rem);
@@ -552,12 +504,12 @@ canvas {
   transition: opacity var(--selection-fade-duration) var(--selection-fade-ease), color var(--selection-fade-duration) var(--selection-fade-ease);
 }
 
-#page-content section[aria-labelledby="main-contact-heading"] a.orb-dimmed-contact {
+#page-content footer[aria-labelledby="main-contact-heading"] a.orb-dimmed-contact {
   opacity: 0.22;
 }
 
-#page-content section[aria-labelledby="main-contact-heading"] a:hover,
-#page-content section[aria-labelledby="main-contact-heading"] a:focus-visible {
+#page-content footer[aria-labelledby="main-contact-heading"] a:hover,
+#page-content footer[aria-labelledby="main-contact-heading"] a:focus-visible {
   color: #e6e6e6;
 }
 
@@ -580,6 +532,57 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 0.5lh;
+}
+
+.page-link-list li {
+  padding-bottom: 0.15lh;
+}
+
+.diagonal-arrow-slot {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: baseline;
+  flex: none;
+  transition: width var(--selection-fade-duration) var(--selection-fade-ease);
+}
+
+.diagonal-arrow {
+  display: block;
+  overflow: visible;
+  width: 1cap;
+  height: 1cap;
+  margin-left: 0.35em;
+}
+
+.diagonal-arrow line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: butt;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset var(--selection-fade-duration) var(--selection-fade-ease);
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:hover .diagonal-arrow-slot,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:focus-visible .diagonal-arrow-slot,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.orb-selected-name .diagonal-arrow-slot,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.two-tap-armed .diagonal-arrow-slot,
+#page-content footer[aria-labelledby="main-contact-heading"] a:hover .diagonal-arrow-slot,
+#page-content footer[aria-labelledby="main-contact-heading"] a:focus-visible .diagonal-arrow-slot,
+#page-content footer[aria-labelledby="main-contact-heading"] a.two-tap-armed .diagonal-arrow-slot {
+  width: calc(1cap + 0.35em);
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:hover .diagonal-arrow line,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a:focus-visible .diagonal-arrow line,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.orb-selected-name .diagonal-arrow line,
+#page-content nav[aria-labelledby="selected-projects-title"] h3 a.two-tap-armed .diagonal-arrow line,
+#page-content footer[aria-labelledby="main-contact-heading"] a:hover .diagonal-arrow line,
+#page-content footer[aria-labelledby="main-contact-heading"] a:focus-visible .diagonal-arrow line,
+#page-content footer[aria-labelledby="main-contact-heading"] a.two-tap-armed .diagonal-arrow line {
+  stroke-dashoffset: 0;
 }
 
 #page-content a {
