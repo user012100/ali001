@@ -406,6 +406,21 @@ html.is-touch-device canvas {
   align-items: flex-end;
 }
 
+/* #page-content is sized to a "stable" height tall enough to cover the case
+   where the browser's own collapsible chrome (e.g. Safari's bottom toolbar)
+   hides away (see --app-height / viewportChromeInsetPx in script.js). On real
+   iOS Safari that chrome stays visible on this site (scrolling is fully
+   JS-driven, not a native gesture, so Safari never actually collapses it),
+   so the bottom-anchored buttons below sit behind it. --viewport-chrome-inset
+   already measures exactly that gap and is 0 wherever there's no such gap
+   (desktop, and iOS in-app browsers, which don't have a separate collapsing
+   toolbar) so this offset only ever nudges the buttons where they'd
+   otherwise be hidden, leaving every other context unchanged. */
+.is-touch-device #page-content nav[aria-labelledby="selected-projects-title"],
+.is-touch-device #page-content footer[aria-labelledby="main-contact-heading"] {
+  bottom: var(--viewport-chrome-inset, 0px);
+}
+
 .mobile-collapsible {
   display: grid;
   grid-template-rows: 0fr;

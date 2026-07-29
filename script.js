@@ -57,11 +57,16 @@ let lastTouchDragX = null;
 let lastTouchDragY = null;
 let touchStartY = 0;
 
+const SCROLL_OVERSCROLL_DELTA_CLAMP = 40;
+let pendingOverscrollDeltaX = 0;
+let pendingOverscrollDeltaY = 0;
+let pendingOverscrollPointerY = null;
+
 const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_TILT_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_SPIN_VELOCITY_EASE = 0.2;
 const ORBIT_SPIN_INERTIA_DAMPING = 0.028;
-const PAGE_TRANSITION_TILT_IMPULSE = 0.024;
+const PAGE_TRANSITION_TILT_IMPULSE = 0.034;
 let orbitSpinAngle = 0;
 let orbitSpinVelocity = 0;
 let orbitTiltVelocity = 0;
@@ -192,9 +197,6 @@ function positionLoadDot() {
   dot.style.top = `${centerY / 2 - verticalCenterOffset()}px`;
 }
 if (IS_TOUCH_DEVICE) {
-  // Compute the chrome inset immediately so the dot is already correctly
-  // positioned to match the canvas/orbit center during preload, instead of
-  // only being corrected once setup() runs (which caused a visible jump).
   applyViewportChromeInset(resolveStableViewportHeight() - window.innerHeight);
 }
 positionLoadDot();
@@ -401,7 +403,7 @@ void main() {
 // https://polyhaven.com/a/lonely_road_afternoon_puresky
 function preload() {
   skyImg = loadImage('assets/lonely_road_afternoon_puresky.jpg');
-  // Orb reflection env map: "Citrus Orchard Road Puresky" from Poly Haven (CC0)
+  // Orb reflection texture: "Citrus Orchard Road Puresky" from Poly Haven (CC0)
   // https://polyhaven.com/a/citrus_orchard_road_puresky
   citrusImg = loadImage('assets/citrus_orchard_road_puresky.jpg');
 }
@@ -1401,6 +1403,13 @@ function updateCameraOrientation() {
 	  dragDeltaY = mouseY - pmouseY;
 	  dragging = true;
 	}
+  } else if (pendingOverscrollDeltaX !== 0 || pendingOverscrollDeltaY !== 0) {
+	dragDeltaX = pendingOverscrollDeltaX;
+	dragDeltaY = pendingOverscrollDeltaY;
+	currentY = pendingOverscrollPointerY !== null ? pendingOverscrollPointerY : height / 2;
+	dragging = true;
+	pendingOverscrollDeltaX = 0;
+	pendingOverscrollDeltaY = 0;
   }
 
   let normalFacingFactor = orbitRotationMatrix[4] >= 0 ? 1 : -1;
@@ -1789,6 +1798,12 @@ function getPageSectionOffsets() {
   return { topY: 0, bottomY };
 }
 
+function isAtPageScrollBoundary(direction) {
+  let { topY, bottomY } = getPageSectionOffsets();
+  let targetY = direction > 0 ? bottomY : topY;
+  return Math.abs(targetY - window.scrollY) < 1;
+}
+
 function prefersReducedMotionScroll() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
@@ -1821,13 +1836,14 @@ function animatePageScrollTo(targetY) {
   requestAnimationFrame(step);
 }
 
-function goToPageState(direction) {
+function goToPageState(direction, tiltDirection) {
   if (pageScrollLockedForBio) return;
   let { topY, bottomY } = getPageSectionOffsets();
   let targetY = direction > 0 ? bottomY : topY;
   if (Math.abs(targetY - window.scrollY) < 1) return;
   closeMobileLists();
-  orbitTiltVelocity += direction * PAGE_TRANSITION_TILT_IMPULSE;
+  let sign = tiltDirection !== undefined ? tiltDirection : direction;
+  orbitTiltVelocity = sign * PAGE_TRANSITION_TILT_IMPULSE;
   animatePageScrollTo(targetY);
 }
 
@@ -1836,7 +1852,14 @@ function handlePageWheel(event) {
   if (pageScrollLockedForBio) return;
   if (pageScrollAnimating) return;
   if (Math.abs(event.deltaY) < PAGE_WHEEL_DELTA_THRESHOLD) return;
-  goToPageState(event.deltaY > 0 ? 1 : -1);
+  let direction = event.deltaY > 0 ? 1 : -1;
+  if (isAtPageScrollBoundary(direction)) {
+	pendingOverscrollDeltaX = constrain(event.deltaX, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
+	pendingOverscrollDeltaY = constrain(event.deltaY, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
+	pendingOverscrollPointerY = event.clientY;
+	return;
+  }
+  goToPageState(direction, -direction);
 }
 
 window.addEventListener('wheel', handlePageWheel, { passive: false });
@@ -1871,13 +1894,18 @@ function handlePageTouchMove(event) {
   let deltaY = event.touches[0].clientY - pageSwipeStartY;
   if (Math.abs(deltaY) < PAGE_SWIPE_TRIGGER_PX || Math.abs(deltaY) <= Math.abs(deltaX)) return;
 
+  let direction = deltaY < 0 ? 1 : -1;
+  if (isAtPageScrollBoundary(direction)) {
+	return;
+  }
+
   pageSwipeTriggered = true;
   isDraggingCamera = false;
   dragMoved = false;
   lastTouchDragX = null;
   lastTouchDragY = null;
 
-  goToPageState(deltaY < 0 ? 1 : -1);
+  goToPageState(direction);
 }
 
 function handlePageTouchEnd() {
