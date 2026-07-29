@@ -37,6 +37,7 @@ html {
 :root {
   --selection-fade-duration: 0.78s;
   --selection-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bio-overlay-padding: 2rem;
 }
 
 body.preload-lock {
@@ -182,7 +183,7 @@ html.is-touch-device canvas {
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 2rem;
+  padding: var(--bio-overlay-padding);
   box-sizing: border-box;
   clip-path: circle(0px at 50% 50%);
   z-index: 5;
@@ -190,8 +191,8 @@ html.is-touch-device canvas {
 }
 
 @media (width < 768px) {
-  #bio-overlay {
-    padding: 1rem;
+  :root {
+    --bio-overlay-padding: 1rem;
   }
 }
 
@@ -335,9 +336,8 @@ html.is-touch-device canvas {
 
 
 .is-touch-device #page-content {
-  padding-top: max(0px, calc(0.5rem - var(--viewport-chrome-inset, 0px)));
-  min-height: calc(var(--app-height, 100vh) * 0.85);
-  height: auto;
+  height: var(--app-height, 100vh);
+  padding-top: var(--bio-overlay-padding);
 }
 
 .mobile-list-toggle {
