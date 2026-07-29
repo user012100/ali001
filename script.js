@@ -61,6 +61,7 @@ const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_TILT_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_SPIN_VELOCITY_EASE = 0.2;
 const ORBIT_SPIN_INERTIA_DAMPING = 0.028;
+const PAGE_TRANSITION_TILT_IMPULSE = 0.024;
 let orbitSpinAngle = 0;
 let orbitSpinVelocity = 0;
 let orbitTiltVelocity = 0;
@@ -189,6 +190,12 @@ function positionLoadDot() {
   let centerY = (typeof height !== 'undefined' && height > 0) ? height : resolveStableViewportHeight();
   dot.style.left = `${centerX / 2}px`;
   dot.style.top = `${centerY / 2 - verticalCenterOffset()}px`;
+}
+if (IS_TOUCH_DEVICE) {
+  // Compute the chrome inset immediately so the dot is already correctly
+  // positioned to match the canvas/orbit center during preload, instead of
+  // only being corrected once setup() runs (which caused a visible jump).
+  applyViewportChromeInset(resolveStableViewportHeight() - window.innerHeight);
 }
 positionLoadDot();
 
@@ -1820,6 +1827,7 @@ function goToPageState(direction) {
   let targetY = direction > 0 ? bottomY : topY;
   if (Math.abs(targetY - window.scrollY) < 1) return;
   closeMobileLists();
+  orbitTiltVelocity += direction * PAGE_TRANSITION_TILT_IMPULSE;
   animatePageScrollTo(targetY);
 }
 
