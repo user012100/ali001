@@ -2,12 +2,12 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100%;
+  overflow: hidden;
   background: #000000;
   touch-action: pan-y;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  letter-spacing: 0.02em;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -24,16 +24,6 @@ body::-webkit-scrollbar {
   height: 0;
 }
 
-html {
-  scroll-snap-type: y mandatory;
-}
-
-#hero,
-#page-content {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-}
-
 :root {
   --selection-fade-duration: 0.78s;
   --selection-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -45,19 +35,9 @@ body.preload-lock {
   touch-action: none;
 }
 
-body.skybox-view {
-  overflow: hidden;
-  touch-action: none;
-}
-
-body.skybox-view #page-content {
-  pointer-events: none;
-}
-
 #hero {
   position: relative;
-  height: auto;
-  min-height: var(--app-height, 100vh);
+  height: var(--app-height, 100vh);
   overflow: visible;
 }
 
@@ -224,18 +204,10 @@ html.is-touch-device canvas {
   transition: opacity var(--selection-fade-duration) var(--selection-fade-ease);
 }
 
-#bio-overlay.orb-selected .bio-overlay-content p {
-  opacity: 0.22;
-}
-
 .bio-text {
   color: #5998CF;
   cursor: default;
   user-select: none;
-}
-
-.bio-name {
-  color: #e6e6e6;
 }
 
 .offwhite-highlight {
@@ -282,24 +254,13 @@ html.is-touch-device canvas {
 }
 
 #page-content {
-  position: relative;
-  z-index: 1;
-  min-height: 36rem;
-  height: var(--app-height, 100vh);
+  position: absolute;
+  inset: 0;
   padding: clamp(1rem, 2.2vw, 2rem);
   padding-bottom: 0;
-  margin-top: 0;
   box-sizing: border-box;
-  background: #000000;
   color: #5998CF;
-}
-
-#page-content > article {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 0.6lh;
+  pointer-events: none;
 }
 
 #page-content-title,
@@ -315,28 +276,12 @@ html.is-touch-device canvas {
   border: 0;
 }
 
-#page-content > article > header p {
-  margin: 0;
-  margin-left: 0;
-  font-size: clamp(2.4rem, 8.6vw, 5.2rem);
-  font-weight: 600;
-  line-height: 1.1;
-  color: #5998CF;
-  width: 100%;
-  text-align: left;
-}
-
-#page-content > article > header p .intro-keywords {
-  color: #e6e6e6;
-}
-
 #intro-dynamic-text {
   transition: opacity 0.36s var(--selection-fade-ease);
 }
 
 
 .is-touch-device #page-content {
-  height: var(--app-height, 100vh);
   padding-top: var(--bio-overlay-padding);
 }
 
@@ -346,7 +291,7 @@ html.is-touch-device canvas {
   color: #EB3DA8;
   background: none;
   border: none;
-  padding: 0 0 calc(clamp(1rem, 2.2vw, 2rem) + 0.15lh) 0;
+  padding: 0 0 clamp(1rem, 2.2vw, 2rem) 0;
   margin: 0;
   font-family: inherit;
   font-size: clamp(1.45rem, 3.1vw, 2.2rem);
@@ -392,7 +337,14 @@ html.is-touch-device canvas {
   flex-direction: column;
   gap: 0;
   max-width: 58vw;
-  z-index: 2;
+  z-index: 11;
+  pointer-events: auto;
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"].text-behind-orb,
+#page-content footer[aria-labelledby="main-contact-heading"].text-behind-orb {
+  z-index: 9;
+  pointer-events: none;
 }
 
 #page-content nav[aria-labelledby="selected-projects-title"] {
@@ -465,6 +417,10 @@ html.is-touch-device canvas {
   flex-direction: column;
   gap: 0;
   padding-bottom: 0.15lh;
+}
+
+#page-content nav[aria-labelledby="selected-projects-title"] article:last-child {
+  padding-bottom: 0;
 }
 
 #page-content nav[aria-labelledby="selected-projects-title"] h3 {
@@ -551,6 +507,10 @@ html.is-touch-device canvas {
 
 .page-link-list li {
   padding-bottom: 0.15lh;
+}
+
+.page-link-list li:last-child {
+  padding-bottom: 0;
 }
 
 .diagonal-arrow-slot {

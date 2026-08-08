@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Ali Salifov</title>
-  <meta name="description" content="Ali Salifov is a multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, Nick Lambrou, [untold] and Persistence of Color.">
+  <meta name="description" content="Ali Salifov is a multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, [untold] and Persistence of Color.">
   <link rel="canonical" href="https://ali001.com/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Ali Salifov">
   <meta property="og:title" content="Ali Salifov">
-  <meta property="og:description" content="Multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, Nick Lambrou, [untold], and Persistence of Color.">
+  <meta property="og:description" content="Multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, [untold] and Persistence of Color.">
   <meta property="og:url" content="https://ali001.com/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Ali Salifov">
@@ -52,19 +52,11 @@
     <a id="label" href="#" rel="noopener"></a>
     <div id="bio-overlay" aria-hidden="true">
       <div class="bio-overlay-content">
-        <p class="bio-text"><span class="bio-name">Ali Salifov</span> is a <span class="offwhite-highlight">multimedia artist and designer</span> based in New York.</p>
+        <h1 id="page-content-title" class="sr-only">Ali Salifov</h1>
+        <p class="bio-text"><span class="sr-only">Ali Salifov is a multimedia artist and designer based in New York. </span><span id="intro-dynamic-text">Ali Salifov is a multimedia artist and designer based in New York.</span></p>
       </div>
     </div>
-    <button id="bio-close-dot" type="button" aria-label="Toggle bio"></button>
-  </section>
-
-  <main id="page-content" aria-label="Portfolio content">
-    <article aria-labelledby="page-content-title">
-      <header>
-        <h1 id="page-content-title">Ali Salifov</h1>
-        <p><span class="sr-only">Ali Salifov is a multimedia artist and designer based in New York. </span><span id="intro-dynamic-text">Working across web, print, images and sound.</span></p>
-      </header>
-
+    <div id="page-content">
       <nav aria-labelledby="selected-projects-title">
         <h2 id="selected-projects-title">Selected Projects</h2>
         <button type="button" id="projects-toggle" class="mobile-list-toggle" aria-expanded="false" aria-controls="selected-projects-list">Projects</button>
@@ -79,11 +71,6 @@
             <article>
               <h3><a href="https://joannaistanbul.com" rel="noopener">Joanna<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
               <p class="sr-only"><a href="https://joannaistanbul.com" rel="noopener">A commercial website for Joanna, a venue in Istanbul, Turkey.</a></p>
-            </article>
-
-            <article>
-              <h3><a href="https://nlambrou.com" rel="noopener">Nick Lambrou<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
-              <p class="sr-only"><a href="https://nlambrou.com" rel="noopener">A portfolio website for Nick Lambrou, a film producer.</a></p>
             </article>
 
             <article>
@@ -107,16 +94,17 @@
           <div class="mobile-collapsible-inner">
             <address>
               <ul class="page-link-list">
-                <li><a href="mailto:work@ali001.com" data-intro="Feel welcome to reach out for collaborations or any other inquiries.">Email<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
-                <li><a href="https://github.com/user012100" rel="noopener" data-intro="Selection of web projects I've worked on and some currently in progress.">GitHub<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
+                <li><a href="mailto:work@ali001.com" data-intro="Reach out for collaborations or any other inquiries.">Email<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
+                <li><a href="https://github.com/user012100" rel="noopener" data-intro="Selection of more web projects I've worked on.">GitHub<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
                 <li><a href="https://instagram.com/ali00100001/" rel="noopener" data-intro="Follow me on social media.">Instagram<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
               </ul>
             </address>
           </div>
         </div>
       </footer>
-    </article>
-  </main>
+    </div>
+    <button id="bio-close-dot" type="button" aria-label="Toggle bio"></button>
+  </section>
 
   <script src="script.js"></script>
 </body>

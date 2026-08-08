@@ -1,14 +1,6 @@
-if ('scrollRestoration' in history) {
-  history.scrollRestoration = 'manual';
-}
-window.scrollTo(0, 0);
-window.addEventListener('DOMContentLoaded', () => window.scrollTo(0, 0));
-window.addEventListener('load', () => window.scrollTo(0, 0));
-
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, orbitSpeed: 0.0015, size: 74 },
   { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, orbitSpeed: 0.0015, size: 74 },
-  { title: "Nick Lambrou", year: 2025, url: "https://nlambrou.com", orbitAngle: 0, orbitSpeed: 0.0015, size: 74 },
   { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, orbitSpeed: 0.0015, size: 74 },
   { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, orbitSpeed: 0.0015, size: 74 }
 ];
@@ -40,9 +32,10 @@ let labelFadeOutUntil = 0;
 const LABEL_FADE_MS = 250;
 const LABEL_EDGE_PADDING = 16;
 
-const ORBIT_MAJOR_RADIUS = 380;
-const ORBIT_MINOR_RADIUS = 210;
-const ORBIT_CONTENT_RADIUS = ORBIT_MAJOR_RADIUS + 90;
+const ORBIT_MAJOR_RADIUS = 300;
+const ORBIT_MINOR_RADIUS = 165;
+// kept independent of the radii above so pulling the orbits inward doesn't also zoom the camera in
+const ORBIT_CONTENT_RADIUS = 470;
 
 let camYaw = Math.PI;
 const CAM_AUTO_ROTATE_SPEED = 0.0009;
@@ -57,7 +50,7 @@ let lastTouchDragX = null;
 let lastTouchDragY = null;
 let touchStartY = 0;
 
-const SCROLL_OVERSCROLL_DELTA_CLAMP = 40;
+const SCROLL_OVERSCROLL_DELTA_CLAMP = 50;
 let pendingOverscrollDeltaX = 0;
 let pendingOverscrollDeltaY = 0;
 let pendingOverscrollPointerY = null;
@@ -66,7 +59,6 @@ const ORBIT_SPIN_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_TILT_DRAG_SENSITIVITY = 0.0035;
 const ORBIT_SPIN_VELOCITY_EASE = 0.2;
 const ORBIT_SPIN_INERTIA_DAMPING = 0.028;
-const PAGE_TRANSITION_TILT_IMPULSE = 0.034;
 let orbitSpinAngle = 0;
 let orbitSpinVelocity = 0;
 let orbitTiltVelocity = 0;
@@ -117,8 +109,7 @@ function resolveStableViewportHeight() {
 }
 
 function shouldShowOrbLabel() {
-  if (document.body.classList.contains('skybox-view')) return true;
-  return window.scrollY <= initialViewportHeight * 0.25;
+  return !bioOverlayOpen;
 }
 
 const SKYBOX_MIN_BRIGHTNESS = 0.5;
@@ -153,7 +144,6 @@ const BIO_REVEAL_OPEN_SETTLE_EASE = 0.09;
 let bioRevealTarget = 1;
 let bioRevealProgress = 1;
 
-let pageScrollLockedForBio = false;
 
 function computeFitDistance(vFov, aspect) {
   let distForHeight = ORBIT_CONTENT_RADIUS / Math.tan(vFov / 2);
@@ -233,6 +223,7 @@ const OVERLAY_FADE_TRANSITION_DURATION = '0.35s';
 let bioOverlayEl;
 let bioOverlayContentEl;
 let bioCloseDotEl;
+let pageContentEl;
 let pageIntroEl;
 let pageIntroDynamicEl;
 let pageProjectsEl;
@@ -246,15 +237,14 @@ let lastSelectedIndex = -2;
 let bioOverlayOpen = true;
 let bioLinks = [];
 let bioActiveLinks = new Set();
-const PAGE_INTRO_DEFAULT_TEXT = 'Working across web, print, images and sound.';
+const PAGE_INTRO_DEFAULT_TEXT = 'Ali Salifov is a multimedia artist and designer based in New York.';
 const INTRO_HIGHLIGHT_PHRASES = [
-  'web, print, images and sound.',
+  'Ali Salifov',
+  'multimedia artist and designer',
   'XD',
   'print magazine',
   'commercial website',
   'Joanna',
-  'portfolio website',
-  'Nick Lambrou',
   '[untold]',
   'dedicated space',
   'Persistence of Color',
@@ -271,7 +261,7 @@ const INTRO_HIGHLIGHT_PATTERN = new RegExp(
     .join('|'),
   'gi'
 );
-const PAGE_INTRO_RESET_DELAY_MS = 70;
+const DESKTOP_HOVER_RESET_DELAY_MS = 1000;
 const PAGE_INTRO_FADE_DURATION_MS = 360;
 const MOBILE_INTRO_TWO_TAP_RESET_MS = 2500;
 const INTRO_LOCK_BREAKPOINT_PX = 960;
@@ -472,7 +462,8 @@ function setup() {
 
   bioOverlayEl = document.getElementById('bio-overlay');
   bioOverlayContentEl = document.querySelector('#bio-overlay .bio-overlay-content');
-  pageIntroEl = document.querySelector('#page-content > article > header p');
+  pageContentEl = document.getElementById('page-content');
+  pageIntroEl = document.querySelector('#bio-overlay .bio-overlay-content p');
   pageIntroDynamicEl = document.getElementById('intro-dynamic-text');
   pageProjectsEl = document.querySelector('#page-content nav[aria-labelledby="selected-projects-title"]');
   pageContactEl = document.querySelector('#page-content footer[aria-labelledby="main-contact-heading"]');
@@ -594,7 +585,7 @@ function scheduleIntroTextReset() {
   pageIntroResetTimer = setTimeout(() => {
     pageIntroResetTimer = null;
     animateIntroTextTo(PAGE_INTRO_DEFAULT_TEXT, null);
-  }, PAGE_INTRO_RESET_DELAY_MS);
+  }, DESKTOP_HOVER_RESET_DELAY_MS);
 }
 
 function clearMobileIntroArmedLink() {
@@ -824,7 +815,6 @@ function updateBioReveal() {
   if (bioOverlayOpen && bioRevealTarget >= 1 && bioRevealProgress > 0.998) {
 	bioRevealProgress = 1;
 	applyBioRevealCss();
-	pageScrollLockedForBio = false;
   }
 }
 
@@ -835,7 +825,9 @@ function computeBioMaskMaxRadius() {
 function applyBioRevealCss() {
   if (!bioOverlayEl) return;
   let radiusPx = bioRevealProgress * computeBioMaskMaxRadius();
-  bioOverlayEl.style.clipPath = `circle(${radiusPx}px at 50% 50%)`;
+  let clipPath = `circle(${radiusPx}px at 50% 50%)`;
+  bioOverlayEl.style.clipPath = clipPath;
+  if (pageContentEl) pageContentEl.style.clipPath = clipPath;
 }
 
 function computeDotPulseScale() {
@@ -908,7 +900,6 @@ function settleBioOpenState() {
   bioOverlayEl.classList.add('open');
   bioOverlayEl.setAttribute('aria-hidden', 'false');
   document.body.classList.add('bio-open');
-  setSkyboxInteractionLock(false);
 }
 
 function updateBioCloseDot() {
@@ -922,7 +913,6 @@ function setBioCloseDotHover(hovering) {
 }
 
 function toggleBioOverlay() {
-  pageScrollLockedForBio = true;
   if (bioRevealTarget > 0.5) {
 	closeBioOverlay();
   } else {
@@ -932,7 +922,6 @@ function toggleBioOverlay() {
 
 function closeBioOverlay() {
   bioRevealTarget = 0;
-  document.body.classList.add('skybox-view');
 }
 
 function finalizeBioClose() {
@@ -940,7 +929,6 @@ function finalizeBioClose() {
   bioOverlayEl.classList.remove('open');
   bioOverlayEl.setAttribute('aria-hidden', 'true');
   resetBioLinksAfterClose();
-  setSkyboxInteractionLock(true);
 }
 
 function resetBioLinksAfterClose() {
@@ -950,21 +938,6 @@ function resetBioLinksAfterClose() {
   if (!IS_TOUCH_DEVICE) {
 	bioLinks.forEach((a) => a.classList.remove('bio-link-active'));
   }
-}
-
-function setSkyboxInteractionLock(locked) {
-  let pageContentEl = document.getElementById('page-content');
-  document.body.classList.toggle('skybox-view', locked);
-  if (!pageContentEl) return;
-
-  if (locked) {
-    pageContentEl.setAttribute('inert', '');
-    pageContentEl.setAttribute('aria-hidden', 'true');
-    return;
-  }
-
-  pageContentEl.removeAttribute('inert');
-  pageContentEl.removeAttribute('aria-hidden');
 }
 
 function bindPageProjectLinks() {
@@ -1284,8 +1257,24 @@ function updateProjectNameSelectionState() {
   if (mobileContactToggleEl) mobileContactToggleEl.classList.toggle('orb-dimmed-name', hasSelectedProject);
 
   if (hasSelectedProject) {
+    if (orbHoverProjectsCloseTimer) {
+      clearTimeout(orbHoverProjectsCloseTimer);
+      orbHoverProjectsCloseTimer = null;
+    }
     setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
     setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, true);
+    projectsListOpenedByOrbSelection = true;
+  } else if (projectsListOpenedByOrbSelection) {
+    if (IS_TOUCH_DEVICE) {
+      setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, false);
+      projectsListOpenedByOrbSelection = false;
+    } else if (!orbHoverProjectsCloseTimer) {
+      orbHoverProjectsCloseTimer = setTimeout(() => {
+        orbHoverProjectsCloseTimer = null;
+        setMobileListOpen(mobileProjectsListEl, mobileProjectsToggleEl, false);
+        projectsListOpenedByOrbSelection = false;
+      }, DESKTOP_HOVER_RESET_DELAY_MS);
+    }
   }
 }
 
@@ -1293,6 +1282,8 @@ let mobileProjectsListEl = null;
 let mobileProjectsToggleEl = null;
 let mobileContactListEl = null;
 let mobileContactToggleEl = null;
+let projectsListOpenedByOrbSelection = false;
+let orbHoverProjectsCloseTimer = null;
 
 function setMobileListOpen(listEl, toggleEl, open) {
   if (!listEl || !toggleEl) return;
@@ -1312,7 +1303,7 @@ function closeMobileLists() {
   setMobileListOpen(mobileContactListEl, mobileContactToggleEl, false);
 }
 
-const MOBILE_LIST_PRESERVE_SELECTOR = '#hero, #bio-overlay, #bio-close-dot, nav[aria-labelledby="selected-projects-title"], footer[aria-labelledby="main-contact-heading"]';
+const MOBILE_LIST_PRESERVE_SELECTOR = '#bio-overlay, #bio-close-dot, #orb-link, #label, nav[aria-labelledby="selected-projects-title"], footer[aria-labelledby="main-contact-heading"]';
 
 function setupMobileListOutsideClose() {
   document.addEventListener('click', (event) => {
@@ -1324,15 +1315,36 @@ function setupMobileListOutsideClose() {
 function setupDesktopListHoverToggle(sectionEl, listEl, toggleEl, otherListEl, otherToggleEl) {
   if (!sectionEl || !listEl || !toggleEl) return;
 
+  let closeTimer = null;
+
+  function cancelClose() {
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+  }
+
   function open() {
+    cancelClose();
     setMobileListOpen(otherListEl, otherToggleEl, false);
     setMobileListOpen(listEl, toggleEl, true);
   }
 
+  function scheduleClose() {
+    cancelClose();
+    closeTimer = setTimeout(() => {
+      closeTimer = null;
+      setMobileListOpen(listEl, toggleEl, false);
+    }, DESKTOP_HOVER_RESET_DELAY_MS);
+  }
+
   sectionEl.addEventListener('mouseenter', open);
+  sectionEl.addEventListener('mouseleave', scheduleClose);
   toggleEl.addEventListener('focus', open);
+  toggleEl.addEventListener('blur', scheduleClose);
   toggleEl.addEventListener('click', () => {
     if (listEl.classList.contains('open')) {
+      cancelClose();
       setMobileListOpen(listEl, toggleEl, false);
     }
   });
@@ -1599,7 +1611,40 @@ function draw() {
   updateOrbLinkHitzone();
   updateProjectNameSelectionState();
   updateDotOcclusion(camDist);
+  updatePageContentOrbOcclusion();
   updateBioDimmedState();
+}
+
+function circleOverlapsRect(cx, cy, r, rect) {
+  let closestX = constrain(cx, rect.left, rect.right);
+  let closestY = constrain(cy, rect.top, rect.bottom);
+  let dx = cx - closestX;
+  let dy = cy - closestY;
+  return (dx * dx + dy * dy) <= r * r;
+}
+
+function updatePageContentOrbOcclusion() {
+  if (!pageProjectsEl || !pageContactEl) return;
+
+  let navRect = pageProjectsEl.getBoundingClientRect();
+  let contactRect = pageContactEl.getBoundingClientRect();
+  let navOverlap = false;
+  let contactOverlap = false;
+
+  for (let i = 0; i < projects.length; i++) {
+	let p = projects[i];
+	if (!p.screenVisible) continue;
+	if (!navOverlap && circleOverlapsRect(p.screenX, p.screenY, p.screenRadius, navRect)) navOverlap = true;
+	if (!contactOverlap && circleOverlapsRect(p.screenX, p.screenY, p.screenRadius, contactRect)) contactOverlap = true;
+	if (navOverlap && contactOverlap) break;
+  }
+
+  // an opened list is showing actual links to tap, so it should never lose priority to an orb passing behind it
+  if (mobileProjectsListEl && mobileProjectsListEl.classList.contains('open')) navOverlap = false;
+  if (mobileContactListEl && mobileContactListEl.classList.contains('open')) contactOverlap = false;
+
+  pageProjectsEl.classList.toggle('text-behind-orb', navOverlap);
+  pageContactEl.classList.toggle('text-behind-orb', contactOverlap);
 }
 
 function updateDotOcclusion(camDist) {
@@ -1783,140 +1828,12 @@ function touchEnded(event) {
   return true;
 }
 
-const PAGE_SCROLL_ANIMATION_MS = 500;
-const PAGE_WHEEL_DELTA_THRESHOLD = 2;
-let pageScrollAnimating = false;
-let pageScrollAnimationToken = 0;
-
-function easeInOutCubicScroll(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-function getPageSectionOffsets() {
-  let pageContentEl = document.getElementById('page-content');
-  let bottomY = pageContentEl ? pageContentEl.getBoundingClientRect().top + window.scrollY : 0;
-  return { topY: 0, bottomY };
-}
-
-function isAtPageScrollBoundary(direction) {
-  let { topY, bottomY } = getPageSectionOffsets();
-  let targetY = direction > 0 ? bottomY : topY;
-  return Math.abs(targetY - window.scrollY) < 1;
-}
-
-function prefersReducedMotionScroll() {
-  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-}
-
-function animatePageScrollTo(targetY) {
-  let startY = window.scrollY;
-  let distance = targetY - startY;
-  if (Math.abs(distance) < 1) return;
-
-  if (prefersReducedMotionScroll()) {
-    window.scrollTo(0, targetY);
-    return;
-  }
-
-  pageScrollAnimating = true;
-  let token = ++pageScrollAnimationToken;
-  let startTime = performance.now();
-
-  function step(now) {
-    if (token !== pageScrollAnimationToken) return;
-    let elapsed = now - startTime;
-    let t = Math.min(elapsed / PAGE_SCROLL_ANIMATION_MS, 1);
-    window.scrollTo(0, startY + distance * easeInOutCubicScroll(t));
-    if (t < 1) {
-      requestAnimationFrame(step);
-    } else {
-      pageScrollAnimating = false;
-    }
-  }
-  requestAnimationFrame(step);
-}
-
-function goToPageState(direction, tiltDirection) {
-  if (pageScrollLockedForBio) return;
-  let { topY, bottomY } = getPageSectionOffsets();
-  let targetY = direction > 0 ? bottomY : topY;
-  if (Math.abs(targetY - window.scrollY) < 1) return;
-  closeMobileLists();
-  let sign = tiltDirection !== undefined ? tiltDirection : direction;
-  orbitTiltVelocity = sign * PAGE_TRANSITION_TILT_IMPULSE;
-  animatePageScrollTo(targetY);
-}
-
-function handlePageWheel(event) {
+function handleOrbitWheel(event) {
   event.preventDefault();
-  if (pageScrollLockedForBio) return;
-  if (pageScrollAnimating) return;
-  if (Math.abs(event.deltaY) < PAGE_WHEEL_DELTA_THRESHOLD) return;
-  let direction = event.deltaY > 0 ? 1 : -1;
-  if (isAtPageScrollBoundary(direction)) {
-	pendingOverscrollDeltaX = constrain(event.deltaX, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
-	pendingOverscrollDeltaY = constrain(event.deltaY, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
-	pendingOverscrollPointerY = event.clientY;
-	return;
-  }
-  goToPageState(direction, -direction);
+  pendingOverscrollDeltaX = -constrain(event.deltaX, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
+  pendingOverscrollDeltaY = -constrain(event.deltaY, -SCROLL_OVERSCROLL_DELTA_CLAMP, SCROLL_OVERSCROLL_DELTA_CLAMP);
+  pendingOverscrollPointerY = event.clientY;
 }
 
-window.addEventListener('wheel', handlePageWheel, { passive: false });
-
-const PAGE_SWIPE_TRIGGER_PX = 45;
-let pageSwipeActive = false;
-let pageSwipeTriggered = false;
-let pageSwipeStartX = 0;
-let pageSwipeStartY = 0;
-
-function handlePageTouchStart(event) {
-  if (pageScrollLockedForBio || selectedIndex !== -1 || isInteractiveTarget(event) || !event.touches || event.touches.length !== 1) {
-	pageSwipeActive = false;
-	return;
-  }
-  pageSwipeActive = true;
-  pageSwipeTriggered = false;
-  pageSwipeStartX = event.touches[0].clientX;
-  pageSwipeStartY = event.touches[0].clientY;
-}
-
-function handlePageTouchMove(event) {
-  if (!pageSwipeActive || !event.touches || event.touches.length !== 1) return;
-  if (pageScrollLockedForBio || selectedIndex !== -1) {
-	pageSwipeActive = false;
-	return;
-  }
-  event.preventDefault();
-  if (pageSwipeTriggered || pageScrollAnimating) return;
-
-  let deltaX = event.touches[0].clientX - pageSwipeStartX;
-  let deltaY = event.touches[0].clientY - pageSwipeStartY;
-  if (Math.abs(deltaY) < PAGE_SWIPE_TRIGGER_PX || Math.abs(deltaY) <= Math.abs(deltaX)) return;
-
-  let direction = deltaY < 0 ? 1 : -1;
-  if (isAtPageScrollBoundary(direction)) {
-	return;
-  }
-
-  pageSwipeTriggered = true;
-  isDraggingCamera = false;
-  dragMoved = false;
-  lastTouchDragX = null;
-  lastTouchDragY = null;
-
-  goToPageState(direction);
-}
-
-function handlePageTouchEnd() {
-  pageSwipeActive = false;
-  pageSwipeTriggered = false;
-}
-
-if (IS_TOUCH_DEVICE) {
-  document.addEventListener('touchstart', handlePageTouchStart, { passive: true });
-  document.addEventListener('touchmove', handlePageTouchMove, { passive: false });
-  document.addEventListener('touchend', handlePageTouchEnd, { passive: true });
-  document.addEventListener('touchcancel', handlePageTouchEnd, { passive: true });
-}
+window.addEventListener('wheel', handleOrbitWheel, { passive: false });
 
