@@ -2,110 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ali Salifov</title>
-  <meta name="description" content="Ali Salifov is a multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, [untold] and Persistence of Color.">
-  <link rel="canonical" href="https://ali001.com/">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Ali Salifov">
-  <meta property="og:title" content="Ali Salifov">
-  <meta property="og:description" content="Multimedia artist and designer based in New York, working across web, print, images and sound. Portfolio includes XD Magazine, Joanna, [untold] and Persistence of Color.">
-  <meta property="og:url" content="https://ali001.com/">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Ali Salifov">
-  <meta name="twitter:description" content="Multimedia artist and designer based in New York, working across web, print, images and sound.">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Person",
-  "name": "Ali Salifov",
-  "url": "https://ali001.com",
-  "jobTitle": "Multimedia Artist and Designer",
-  "description": "Multimedia artist and designer based in New York, working across web, print, images and sound.",
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "New York",
-    "addressRegion": "NY",
-    "addressCountry": "US"
-  },
-  "sameAs": [
-    "https://www.linkedin.com/in/ali00100",
-    "https://www.instagram.com/ali00100001/",
-    "https://github.com/user012100",
-    "https://xdmag.com"
-  ],
-  "alumniOf": {
-    "@type": "CollegeOrUniversity",
-    "name": "Parsons School of Design"
-  },
-  "knowsAbout": ["multimedia art", "web design", "print design", "creative direction", "web development", "graphic design", "sound design"]
-}
-  </script>
 </head>
 <body>
-  <section id="hero" aria-label="Interactive portfolio hero">
-    <div id="load-overlay"></div>
-    <div id="load-dot"></div>
-    <a id="orb-link" href="#" rel="noopener"></a>
-    <a id="label" href="#" rel="noopener"></a>
-    <div id="bio-overlay" aria-hidden="true">
-      <div class="bio-overlay-content">
-        <h1 id="page-content-title" class="sr-only">Ali Salifov</h1>
-        <p class="bio-text"><span class="sr-only">Ali Salifov is a multimedia artist and designer based in New York. </span><span id="intro-dynamic-text">Ali Salifov is a multimedia artist and designer based in New York.</span></p>
-      </div>
-    </div>
-    <div id="page-content">
-      <nav aria-labelledby="selected-projects-title">
-        <h2 id="selected-projects-title">Selected Projects</h2>
-        <button type="button" id="projects-toggle" class="mobile-list-toggle" aria-expanded="false" aria-controls="selected-projects-list">Projects</button>
-
-        <div id="selected-projects-list" class="mobile-collapsible">
-          <div class="mobile-collapsible-inner">
-            <article>
-              <h3><a href="https://xdmag.com" rel="noopener">XD Magazine<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
-              <p class="sr-only"><a href="https://xdmag.com" rel="noopener">XD is a print magazine centered on artists in New York City.</a></p>
-            </article>
-
-            <article>
-              <h3><a href="https://joannaistanbul.com" rel="noopener">Joanna<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
-              <p class="sr-only"><a href="https://joannaistanbul.com" rel="noopener">A website for Joanna, a venue in Istanbul, Turkey.</a></p>
-            </article>
-
-            <article>
-              <h3><a href="untold/" rel="noopener">[untold]<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
-              <p class="sr-only"><a href="untold/" rel="noopener">[untold] is a dedicated space for your creative writing.</a></p>
-            </article>
-
-            <article>
-              <h3><a href="persistence-of-color/" rel="noopener">Persistence of Color<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></h3>
-              <p class="sr-only"><a href="persistence-of-color/" rel="noopener">Persistence of Color is a project that curates three readings as a digital binding.</a></p>
-            </article>
-          </div>
-        </div>
-      </nav>
-
-      <footer aria-labelledby="main-contact-heading">
-        <h2 id="main-contact-heading" class="sr-only">Contact</h2>
-        <button type="button" id="contact-toggle" class="mobile-list-toggle" aria-expanded="false" aria-controls="main-contact-list">Contact</button>
-
-        <div id="main-contact-list" class="mobile-collapsible">
-          <div class="mobile-collapsible-inner">
-            <address>
-              <ul class="page-link-list">
-                <li><a href="mailto:work@ali001.com" data-intro="Reach out for collaborations or any other inquiries.">Email<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
-                <li><a href="https://github.com/user012100" rel="noopener" data-intro="Selection of more web projects I've worked on.">GitHub<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
-                <li><a href="https://instagram.com/ali00100001/" rel="noopener" data-intro="Follow me on social media.">Instagram<span class="diagonal-arrow-slot"><svg class="diagonal-arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><line x1="0" y1="16" x2="16" y2="0" pathLength="1"></line></svg></span></a></li>
-              </ul>
-            </address>
-          </div>
-        </div>
-      </footer>
-    </div>
-    <button id="bio-close-dot" type="button" aria-label="Toggle bio"></button>
-  </section>
-
+  <main id="grid" class="grid" aria-label="Hover grid"></main>
   <script src="script.js"></script>
 </body>
 </html>
