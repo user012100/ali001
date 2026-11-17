@@ -1,7 +1,8 @@
 let projects = [
   { title: "XD Magazine", year: 2026, url: "https://xdmag.com", orbitAngle: 5.4, orbitSpeed: 0.0015, size: 74 },
   { title: "Joanna", year: 2026, url: "https://joannaistanbul.com", orbitAngle: 4.5, orbitSpeed: 0.0015, size: 74 },
-  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 3.6, orbitSpeed: 0.0015, size: 74 },
+  { title: "Nick Lambrou", year: 2026, url: "https://nlambrou.com", orbitAngle: 3.6, orbitSpeed: 0.0015, size: 74 },
+  { title: "[untold]", year: 2026, url: "untold/", orbitAngle: 2.7, orbitSpeed: 0.0015, size: 74 },
   { title: "Persistence of Color", year: 2025, url: "persistence-of-color/", orbitAngle: 1.8, orbitSpeed: 0.0015, size: 74 }
 ];
 
@@ -249,6 +250,7 @@ const INTRO_HIGHLIGHT_PHRASES = [
   'dedicated space',
   'Persistence of Color',
   'digital binding.',
+  'Nick Lambrou',
   'collaborations',
   'social media.',
   'web projects'
