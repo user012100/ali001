@@ -11,40 +11,59 @@ const CELL_SIZE =
 // Static sites can't list a folder, so the media files are listed here.
 const MEDIA = [
   'a.JPG', 'b.jpeg', 'c.jpg', 'd.png', 'e.jpg', 'f.png', 'g.mp4', 'h.png',
-  'i.png', 'j.png', 'k.jpeg', 'l.png', 'm.jpg', 'n.png', 'o.JPG', 'p.png',
-  'q.png', 'r.png', 's.png', 't.png', 'u.jpg', 'v.jpg',
+  'i.JPG', 'j.png', 'k.jpeg', 'l.png', 'm.jpg', 'n.png', 'o.JPG', 'o.png',
+  'p.png', 'r.png', 's.mov', 't.png', 'u.jpg', 'v.jpg', 'w.JPG', 'x.JPG', 'y.jpg',
 ].map((name) => 'assets/' + encodeURIComponent(name));
 
 const grid = document.getElementById('grid');
-let lastSrc = null;
+let deck = [];
 
 const isVideo = (src) => /\.(mp4|webm|mov)$/i.test(src);
 
-function pickRandom() {
-  let src;
-  do {
-    src = MEDIA[Math.floor(Math.random() * MEDIA.length)];
-  } while (src === lastSrc && MEDIA.length > 1);
-  lastSrc = src;
-  return src;
+function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
+
+// Draws from a shuffled deck so every item shows once before any repeats,
+// and skips anything currently visible on screen.
+function pickNext() {
+  const visible = new Set(
+    Array.from(grid.querySelectorAll('[data-src]'), (el) => el.dataset.src)
+  );
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (deck.length === 0) deck = shuffle(MEDIA.slice());
+    const index = deck.findIndex((src) => !visible.has(src));
+    if (index !== -1) return deck.splice(index, 1)[0];
+    deck = [];
+  }
+
+  // Every item is already on screen
+  return MEDIA[Math.floor(Math.random() * MEDIA.length)];
 }
 
 function createMedia(src) {
+  let el;
   if (isVideo(src)) {
-    const video = document.createElement('video');
-    video.src = src;
-    video.autoplay = true;
-    video.loop = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.play().catch(() => {});
-    return video;
+    el = document.createElement('video');
+    el.src = src;
+    el.autoplay = true;
+    el.loop = true;
+    el.muted = true;
+    el.playsInline = true;
+    el.play().catch(() => {});
+  } else {
+    el = document.createElement('img');
+    el.src = src;
+    el.alt = '';
+    el.draggable = false;
   }
-  const img = document.createElement('img');
-  img.src = src;
-  img.alt = '';
-  img.draggable = false;
-  return img;
+  el.dataset.src = src;
+  return el;
 }
 
 function toggleCell(cell) {
@@ -52,7 +71,7 @@ function toggleCell(cell) {
   if (existing) {
     existing.remove();
   } else {
-    cell.appendChild(createMedia(pickRandom()));
+    cell.appendChild(createMedia(pickNext()));
   }
 }
 
