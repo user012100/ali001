@@ -1,53 +1,74 @@
-const MOBILE_CELL_SIZE = 50;
-const DESKTOP_CELL_SIZE = 150;
-const MOBILE_MAX_WIDTH = 768;
+var MOBILE_CELL_SIZE = 50;
+var DESKTOP_CELL_SIZE = 150;
+var MOBILE_MAX_WIDTH = 768;
 
-// Picked once on load, so the size never changes afterwards
-const CELL_SIZE =
-  Math.min(window.screen.width, window.innerWidth) <= MOBILE_MAX_WIDTH
-    ? MOBILE_CELL_SIZE
-    : DESKTOP_CELL_SIZE;
+var screenWidth = Math.min(window.screen.width, window.innerWidth);
+var CELL_SIZE = DESKTOP_CELL_SIZE;
+if (screenWidth <= MOBILE_MAX_WIDTH) {
+  CELL_SIZE = MOBILE_CELL_SIZE;
+}
 
-// Static sites can't list a folder, so the media files are listed here.
-const MEDIA = [
+var files = [
   'a.jpeg', 'b.jpeg', 'c.jpeg', 'd.png', 'e.jpg', 'f.png', 'g.mp4', 'h.png',
   'i.jpeg', 'j.png', 'k.jpeg', 'l.jpg', 'm.jpg', 'n.mp4', 'o.jpg', 'p.png',
-  'r.png', 's.mp4', 't.png', 'u.jpeg', 'v.jpg', 'w.JPG', 'x.jpeg', 'y.jpg',
-].map((name) => 'assets/' + encodeURIComponent(name));
+  'r.png', 's.mp4', 't.png', 'u.jpeg', 'v.jpg', 'w.jpg', 'x.jpeg', 'y.jpg'
+];
 
-const grid = document.getElementById('grid');
-let deck = [];
+var MEDIA = [];
+for (var i = 0; i < files.length; i++) {
+  MEDIA.push('assets/' + files[i]);
+}
 
-const isVideo = (src) => /\.(mp4|webm|mov)$/i.test(src);
+var grid = document.getElementById('grid');
+grid.style.setProperty('--cell-size', CELL_SIZE + 'px');
+
+var deck = [];
+
+function isVideo(src) {
+  return src.indexOf('.mp4') !== -1;
+}
 
 function shuffle(list) {
-  for (let i = list.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [list[i], list[j]] = [list[j], list[i]];
+  for (var i = list.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
   }
   return list;
 }
 
-// Draws from a shuffled deck so every item shows once before any repeats,
-// and skips anything currently visible on screen.
-function pickNext() {
-  const visible = new Set(
-    Array.from(grid.querySelectorAll('[data-src]'), (el) => el.dataset.src)
-  );
+function getVisibleSources() {
+  var visible = [];
+  var cells = grid.querySelectorAll('.cell');
+  for (var i = 0; i < cells.length; i++) {
+    if (cells[i].currentSrc) {
+      visible.push(cells[i].currentSrc);
+    }
+  }
+  return visible;
+}
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (deck.length === 0) deck = shuffle(MEDIA.slice());
-    const index = deck.findIndex((src) => !visible.has(src));
-    if (index !== -1) return deck.splice(index, 1)[0];
+function pickNext() {
+  var visible = getVisibleSources();
+
+  for (var attempt = 0; attempt < 2; attempt++) {
+    if (deck.length === 0) {
+      deck = shuffle(MEDIA.slice());
+    }
+    for (var i = 0; i < deck.length; i++) {
+      if (visible.indexOf(deck[i]) === -1) {
+        return deck.splice(i, 1)[0];
+      }
+    }
     deck = [];
   }
 
-  // Every item is already on screen
   return MEDIA[Math.floor(Math.random() * MEDIA.length)];
 }
 
 function createMedia(src) {
-  let el;
+  var el;
   if (isVideo(src)) {
     el = document.createElement('video');
     el.src = src;
@@ -55,68 +76,70 @@ function createMedia(src) {
     el.loop = true;
     el.muted = true;
     el.playsInline = true;
-    el.play().catch(() => {});
+    try {
+      el.play();
+    } catch (err) {
+    }
   } else {
     el = document.createElement('img');
     el.src = src;
     el.alt = '';
     el.draggable = false;
   }
-  el.dataset.src = src;
   return el;
 }
 
 function toggleCell(cell) {
-  const existing = cell.firstElementChild;
-  if (existing) {
-    existing.remove();
+  if (cell.firstChild) {
+    cell.removeChild(cell.firstChild);
+    cell.currentSrc = '';
   } else {
-    cell.appendChild(createMedia(pickNext()));
+    var src = pickNext();
+    cell.appendChild(createMedia(src));
+    cell.currentSrc = src;
   }
 }
 
 function buildGrid() {
-  // Sized once on load from the larger of the window and the screen resolution
-  const width = Math.max(window.innerWidth, window.screen.width);
-  const height = Math.max(window.innerHeight, window.screen.height);
-  const cols = Math.max(1, Math.ceil(width / CELL_SIZE));
-  const rows = Math.max(1, Math.ceil(height / CELL_SIZE));
+  var width = Math.max(window.innerWidth, window.screen.width);
+  var height = Math.max(window.innerHeight, window.screen.height);
+  var cols = Math.ceil(width / CELL_SIZE);
+  var rows = Math.ceil(height / CELL_SIZE);
+  var total = cols * rows;
 
-  grid.style.gridTemplateColumns = `repeat(${cols}, ${CELL_SIZE}px)`;
-  grid.style.gridTemplateRows = `repeat(${rows}, ${CELL_SIZE}px)`;
-
-  const needed = cols * rows;
-  while (grid.children.length > needed) grid.lastElementChild.remove();
-  while (grid.children.length < needed) {
-    const cell = document.createElement('div');
+  for (var i = 0; i < total; i++) {
+    var cell = document.createElement('div');
     cell.className = 'cell';
-    cell.addEventListener('pointerenter', (e) => {
-      if (e.pointerType !== 'touch') toggleCell(cell);
+    cell.addEventListener('pointerenter', function (event) {
+      if (event.pointerType !== 'touch') {
+        toggleCell(event.currentTarget);
+      }
     });
     grid.appendChild(cell);
   }
 }
 
-// Touch pointers are captured by the first cell, so track the finger manually
-let lastTouchCell = null;
+var lastTouchCell = null;
 
-function touchOver(e) {
-  if (e.pointerType !== 'touch') return;
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  const cell = el && el.closest('.cell');
+function handleTouchMove(event) {
+  if (event.pointerType !== 'touch') return;
+  var element = document.elementFromPoint(event.clientX, event.clientY);
+  var cell = element ? element.closest('.cell') : null;
   if (cell && cell !== lastTouchCell) {
     lastTouchCell = cell;
     toggleCell(cell);
   }
 }
 
-function touchEnd(e) {
-  if (e.pointerType === 'touch') lastTouchCell = null;
+function handleTouchEnd(event) {
+  if (event.pointerType === 'touch') {
+    lastTouchCell = null;
+  }
 }
 
-grid.addEventListener('pointerdown', touchOver);
-grid.addEventListener('pointermove', touchOver);
-grid.addEventListener('pointerup', touchEnd);
-grid.addEventListener('pointercancel', touchEnd);
+grid.addEventListener('pointerdown', handleTouchMove);
+grid.addEventListener('pointermove', handleTouchMove);
+grid.addEventListener('pointerup', handleTouchEnd);
+grid.addEventListener('pointercancel', handleTouchEnd);
 
 buildGrid();

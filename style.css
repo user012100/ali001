@@ -12,13 +12,12 @@ body {
   overflow: hidden;
 }
 
-/* Columns/rows are set from script.js so cells stay ~200px but fill the screen */
 .grid {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  gap: 0;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -26,6 +25,8 @@ body {
 }
 
 .cell {
+  width: var(--cell-size, 150px);
+  height: var(--cell-size, 150px);
   position: relative;
   background: #000;
   overflow: hidden;
