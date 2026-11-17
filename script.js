@@ -1,31 +1,45 @@
-var MOBILE_CELL_SIZE = 50;
-var DESKTOP_CELL_SIZE = 150;
 var MOBILE_MAX_WIDTH = 768;
+var MOBILE_COLUMNS = 5;
+var DESKTOP_CELL_SIZE = 160;
+var COOLDOWN = 10;
 
-var screenWidth = Math.min(window.screen.width, window.innerWidth);
-var CELL_SIZE = DESKTOP_CELL_SIZE;
-if (screenWidth <= MOBILE_MAX_WIDTH) {
-  CELL_SIZE = MOBILE_CELL_SIZE;
-}
-
-var files = [
-  'a.jpeg', 'b.jpeg', 'c.jpeg', 'd.png', 'e.jpg', 'f.png', 'g.mp4', 'h.png',
-  'i.jpeg', 'j.png', 'k.jpeg', 'l.jpg', 'm.jpg', 'n.mp4', 'o.jpg', 'p.png',
-  'r.png', 's.mp4', 't.png', 'u.jpeg', 'v.jpg', 'w.jpg', 'x.jpeg', 'y.jpg'
-];
-
-var MEDIA = [];
-for (var i = 0; i < files.length; i++) {
-  MEDIA.push('assets/' + files[i]);
-}
+var ARENA_API_URL = 'https://api.are.na/v2/channels/ali001?per=100';
 
 var grid = document.getElementById('grid');
-grid.style.setProperty('--cell-size', CELL_SIZE + 'px');
+var isMobile = Math.min(window.screen.width, window.innerWidth) <= MOBILE_MAX_WIDTH;
 
+var cellWidth = 0;
+var cellHeight = 0;
+
+var MEDIA = [];
 var deck = [];
+var recentlyShown = [];
 
-function isVideo(src) {
-  return src.indexOf('.mp4') !== -1;
+function loadMedia() {
+  fetch(ARENA_API_URL)
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+      var blocks = data.contents;
+      for (var i = 0; i < blocks.length; i++) {
+        var block = blocks[i];
+        if (block.class === 'Image' && block.image) {
+          MEDIA.push(block.image.large.url);
+        } else if (block.class === 'Attachment' && block.attachment &&
+          block.attachment.content_type.indexOf('video') === 0) {
+          MEDIA.push(block.attachment.url);
+        }
+      }
+      buildGrid();
+    })
+    .catch(function (error) {
+      console.error('Could not load media from Are.na', error);
+    });
+}
+
+function isVideo(url) {
+  return url.indexOf('.mp4') !== -1;
 }
 
 function shuffle(list) {
@@ -49,6 +63,13 @@ function getVisibleSources() {
   return visible;
 }
 
+function rememberShown(src) {
+  recentlyShown.push(src);
+  if (recentlyShown.length > COOLDOWN) {
+    recentlyShown.shift();
+  }
+}
+
 function pickNext() {
   var visible = getVisibleSources();
 
@@ -56,15 +77,29 @@ function pickNext() {
     if (deck.length === 0) {
       deck = shuffle(MEDIA.slice());
     }
+
+    var okIndex = -1;
     for (var i = 0; i < deck.length; i++) {
+      if (recentlyShown.indexOf(deck[i]) !== -1) continue;
+      if (okIndex === -1) okIndex = i;
       if (visible.indexOf(deck[i]) === -1) {
-        return deck.splice(i, 1)[0];
+        okIndex = i;
+        break;
       }
     }
+
+    if (okIndex !== -1) {
+      var src = deck.splice(okIndex, 1)[0];
+      rememberShown(src);
+      return src;
+    }
+
     deck = [];
   }
 
-  return MEDIA[Math.floor(Math.random() * MEDIA.length)];
+  var fallback = MEDIA[Math.floor(Math.random() * MEDIA.length)];
+  rememberShown(fallback);
+  return fallback;
 }
 
 function createMedia(src) {
@@ -100,24 +135,59 @@ function toggleCell(cell) {
   }
 }
 
-function buildGrid() {
-  var width = Math.max(window.innerWidth, window.screen.width);
-  var height = Math.max(window.innerHeight, window.screen.height);
-  var cols = Math.ceil(width / CELL_SIZE);
-  var rows = Math.ceil(height / CELL_SIZE);
-  var total = cols * rows;
+function addCell() {
+  var cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.addEventListener('pointerenter', function (event) {
+    if (event.pointerType !== 'touch') {
+      toggleCell(event.currentTarget);
+    }
+  });
+  grid.appendChild(cell);
+}
 
-  for (var i = 0; i < total; i++) {
-    var cell = document.createElement('div');
-    cell.className = 'cell';
-    cell.addEventListener('pointerenter', function (event) {
-      if (event.pointerType !== 'touch') {
-        toggleCell(event.currentTarget);
-      }
-    });
-    grid.appendChild(cell);
+function setCellCount(total) {
+  while (grid.children.length > total) {
+    grid.removeChild(grid.lastElementChild);
+  }
+  while (grid.children.length < total) {
+    addCell();
   }
 }
+
+function buildGrid() {
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  var cols = isMobile ? MOBILE_COLUMNS : Math.max(1, Math.round(width / DESKTOP_CELL_SIZE));
+  cellWidth = width / cols;
+
+  var rows = Math.max(1, Math.round(height / cellWidth));
+  cellHeight = height / rows;
+
+  grid.style.setProperty('--cell-width', cellWidth + 'px');
+  grid.style.setProperty('--cell-height', cellHeight + 'px');
+  grid.style.width = width + 'px';
+  grid.style.height = height + 'px';
+
+  setCellCount(cols * rows);
+}
+
+function handleResize() {
+  if (Math.min(window.screen.width, window.innerWidth) <= MOBILE_MAX_WIDTH) return;
+
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+
+  grid.style.width = width + 'px';
+  grid.style.height = height + 'px';
+
+  var cols = Math.ceil(width / cellWidth);
+  var rows = Math.ceil(height / cellHeight);
+  setCellCount(cols * rows);
+}
+
+window.addEventListener('resize', handleResize);
 
 var lastTouchCell = null;
 
@@ -142,4 +212,4 @@ grid.addEventListener('pointermove', handleTouchMove);
 grid.addEventListener('pointerup', handleTouchEnd);
 grid.addEventListener('pointercancel', handleTouchEnd);
 
-buildGrid();
+loadMedia();
