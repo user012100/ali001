@@ -10,9 +10,9 @@ const CELL_SIZE =
 
 // Static sites can't list a folder, so the media files are listed here.
 const MEDIA = [
-  'a.JPG', 'b.jpeg', 'c.jpg', 'd.png', 'e.jpg', 'f.png', 'g.mp4', 'h.png',
-  'i.JPG', 'j.png', 'k.jpeg', 'l.png', 'm.jpg', 'n.png', 'o.JPG', 'o.png',
-  'p.png', 'r.png', 's.mov', 't.png', 'u.jpg', 'v.jpg', 'w.JPG', 'x.JPG', 'y.jpg',
+  'a.jpeg', 'b.jpeg', 'c.jpeg', 'd.png', 'e.jpg', 'f.png', 'g.mp4', 'h.png',
+  'i.jpeg', 'j.png', 'k.jpeg', 'l.jpg', 'm.jpg', 'n.mp4', 'o.jpg', 'p.png',
+  'r.png', 's.mp4', 't.png', 'u.jpeg', 'v.jpg', 'w.JPG', 'x.jpeg', 'y.jpg',
 ].map((name) => 'assets/' + encodeURIComponent(name));
 
 const grid = document.getElementById('grid');
